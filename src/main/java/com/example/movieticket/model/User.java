@@ -26,4 +26,5 @@ public class User extends AbstractEntity<Integer>{
     LocalDate dob;
     @Enumerated(EnumType.STRING)
     UserRole role;
+    boolean active;
 }

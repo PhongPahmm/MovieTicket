@@ -17,4 +17,5 @@ public class Screen extends AbstractEntity<Integer> {
     String name;
     int totalSeats;
     boolean is3D;
+    boolean active;
 }
