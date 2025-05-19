@@ -1,5 +1,6 @@
 package com.example.movieticket.service.impl;
 
+import com.example.movieticket.common.UserRole;
 import com.example.movieticket.dto.request.UserCreationRequest;
 import com.example.movieticket.dto.request.UserUpdateRequest;
 import com.example.movieticket.dto.response.UserResponse;
@@ -12,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,10 +23,31 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserServiceImpl implements UserService {
     UserRepository userRepository;
-
+    PasswordEncoder passwordEncoder;
     @Override
     public UserResponse createUser(UserCreationRequest request) {
-        return null;
+        var role = (request.getRole() != null) ?
+                request.getRole() : UserRole.USER;
+        User user = User.builder()
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .email(request.getEmail())
+                .phoneNumber(request.getPhoneNumber())
+                .active(true)
+                .role(role)
+                .dob(request.getDob())
+                .build();
+        if(userRepository.existsByUsername(user.getUsername())) {
+            throw new AppException(ErrorCode.USER_EXISTED);
+        }
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_EXISTED);
+        }
+        if(userRepository.existsByPhoneNumber(user.getPhoneNumber())) {
+            throw new AppException(ErrorCode.PHONE_NO_EXISTED);
+        }
+        var savedUser = userRepository.save(user);
+        return mapToUserResponse(savedUser);
     }
 
     @Override
@@ -69,6 +92,7 @@ public class UserServiceImpl implements UserService {
                 .phoneNumber(user.getPhoneNumber())
                 .password(user.getPassword())
                 .role(user.getRole())
+                .active(user.isActive())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();

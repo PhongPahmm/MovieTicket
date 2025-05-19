@@ -31,6 +31,7 @@ public class Movie extends AbstractEntity<Integer> {
     private String language;
     private String posterUrl;
     private String trailerUrl;
+    private boolean active;
 
     @Enumerated(EnumType.STRING)
     private MovieStatus status;

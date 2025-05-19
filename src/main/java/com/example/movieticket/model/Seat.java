@@ -22,5 +22,5 @@ public class Seat extends AbstractEntity<Integer> {
 
     @Enumerated(EnumType.STRING)
     SeatType seatType;
-
+    boolean active;
 }

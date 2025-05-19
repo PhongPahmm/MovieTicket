@@ -30,4 +30,5 @@ public class Show extends AbstractEntity<Integer> {
     LocalDate showDate;
     LocalTime startTime;
     LocalTime endTime;
+    boolean active;
 }
