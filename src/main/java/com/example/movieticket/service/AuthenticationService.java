@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.text.ParseException;
 
 public interface AuthenticationService {
-    AuthenticationResponse authenticate(AuthenticationRequest request);
+    AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response);
     LogoutResponse logout(LogoutRequest request) throws ParseException, JOSEException;
     RefreshResponse refreshToken(HttpServletRequest request, HttpServletResponse response) throws ParseException, JOSEException;
 }

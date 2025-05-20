@@ -2,7 +2,6 @@ package com.example.movieticket.configuration;
 
 
 import com.example.movieticket.repository.InvalidatedTokenRepository;
-import com.example.movieticket.util.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -20,7 +19,6 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
-import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -41,7 +39,7 @@ public class SecurityConfig {
     };
 
     @Value("${jwt.secret-key}")
-    private String signerKey;
+    private String secretKey;
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
@@ -54,9 +52,15 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
 
                 .oauth2ResourceServer(oauth2 ->
-                        oauth2.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder())))
+                        oauth2
+                                .jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder()))
+                                .authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
+
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+                        .accessDeniedHandler(new JwtAccessDenied())
+                )
                 .csrf(AbstractHttpConfigurer::disable)
-                .addFilterBefore(new JwtAuthenticationFilter(invalidatedTokenRepository), BearerTokenAuthenticationFilter.class)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         return httpSecurity.build();
@@ -64,7 +68,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        SecretKeySpec secretKeySpec = new SecretKeySpec(signerKey.getBytes(), "HS512");
+        SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), "HS512");
         return NimbusJwtDecoder
                 .withSecretKey(secretKeySpec)
                 .macAlgorithm(MacAlgorithm.HS512)
