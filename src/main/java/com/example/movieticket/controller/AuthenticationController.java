@@ -28,9 +28,9 @@ public class AuthenticationController {
     AuthenticationService authenticationService;
 
     @PostMapping("/log-in")
-    public ResponseData<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
+    public ResponseData<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request, HttpServletResponse response) {
         return ResponseData.<AuthenticationResponse>builder()
-                .data(authenticationService.authenticate(request))
+                .data(authenticationService.authenticate(request, response))
                 .message("Successfully logged in")
                 .build();
 
@@ -40,6 +40,7 @@ public class AuthenticationController {
             throws ParseException, JOSEException {
         return ResponseData.<LogoutResponse>builder()
                 .data(authenticationService.logout(request))
+                .message("Successfully logged out")
                 .build();
     }
 
@@ -47,9 +48,8 @@ public class AuthenticationController {
     ResponseData<RefreshResponse> refresh(HttpServletRequest request, HttpServletResponse response)
             throws JOSEException, ParseException {
         return ResponseData.<RefreshResponse>builder()
+                .message("Successfully refreshed")
                 .data(authenticationService.refreshToken(request, response))
                 .build();
     }
-
-
 }

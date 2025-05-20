@@ -52,17 +52,27 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Value("${jwt.refresh-duration}")
     protected long REFRESH_DURATION;
 
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+    public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) {
         var user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
-        if (!user.isActive()) {
+        if (!user.getActive()) {
             throw new AppException(ErrorCode.USER_INACTIVE);
         }
         var accessToken = jwtUtil.generateAccessToken(user);
         var refreshToken = jwtUtil.generateRefreshToken(user);
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .path("/")
+                .domain("localhost")
+                .maxAge(REFRESH_DURATION)
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)
@@ -123,8 +133,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String newRefreshToken = jwtUtil.generateRefreshToken(user);
         ResponseCookie cookie = ResponseCookie.from("refreshToken", newRefreshToken)
                 .httpOnly(true)
-                .secure(true)
+//                .secure(true)
                 .path("/")
+                .domain("localhost")
                 .maxAge(REFRESH_DURATION)
                 .sameSite("Strict")
                 .build();
@@ -139,14 +150,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private SignedJWT verifyToken(String token)
             throws ParseException, JOSEException {
-        JWSVerifier verifier = new MACVerifier(SECRET_KEY);
+        JWSVerifier verifier = new MACVerifier(SECRET_KEY.getBytes());
         SignedJWT signedJWT = SignedJWT.parse(token);
-        Date expirationTime = new Date(signedJWT
-                                .getJWTClaimsSet()
-                                .getIssueTime()
-                                .toInstant()
-                                .plus(REFRESH_DURATION, ChronoUnit.SECONDS)
-                                .toEpochMilli());
+        Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
         var verified = signedJWT.verify(verifier);
         if (!(verified && expirationTime.after(new Date()))) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
