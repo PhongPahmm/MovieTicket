@@ -16,8 +16,9 @@ public class UserResponse {
     private String email;
     private String phoneNumber;
     private String password;
+    private String userImage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private UserRole role;
-    private boolean active;
+    private Boolean active;
 }

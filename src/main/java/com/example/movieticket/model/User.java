@@ -24,7 +24,8 @@ public class User extends AbstractEntity<Integer>{
     String phoneNumber;
     String password;
     LocalDate dob;
+    String userImage;
     @Enumerated(EnumType.STRING)
     UserRole role;
-    boolean active;
+    Boolean active;
 }
