@@ -11,7 +11,6 @@ public interface UserService {
     UserResponse updateUser(int userId, UserUpdateRequest request);
     List<UserResponse> getAllUsers();
     UserResponse getUserById(int userId);
-    UserResponse getCurrentUser();
     void deleteUser(int userId);
     UserResponse changeUserStatus(int userId, boolean isActive);
 }

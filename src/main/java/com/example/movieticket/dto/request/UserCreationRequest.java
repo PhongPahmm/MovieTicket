@@ -13,6 +13,6 @@ public class UserCreationRequest implements Serializable {
     private String phoneNumber;
     private String password;
     private LocalDate dob;
-    private boolean active;
+    private Boolean active;
     private UserRole role;
 }
