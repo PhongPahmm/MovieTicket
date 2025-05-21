@@ -37,7 +37,11 @@ public class SecurityConfig {
             "/auth/**",
             "/reviews/**",
             "/search/**",
-            "/movies/**",
+            "/movies",
+            "/movies/{movieId}",
+            "/movies/release-date",
+            "/movies/coming-soon",
+            "/movies/now-showing",
     };
 
     @Value("${jwt.secret-key}")

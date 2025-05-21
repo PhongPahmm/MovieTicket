@@ -1,37 +1,32 @@
-package com.example.movieticket.model;
+package com.example.movieticket.dto.response;
 
 import com.example.movieticket.common.MovieStatus;
-import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
 @Setter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity
-@Table(name = "movies")
-public class Movie extends AbstractEntity<Integer> {
+public class MovieResponse {
+    private int id;
     private String title;
     private String description;
     private Integer durationMinutes;
     private LocalDate releaseDate;
     private String ageRating;
+//    private List<GenreResponse> genre;
     private String director;
-
-    @ElementCollection
     private List<String> actors;
-
     private String language;
     private String posterUrl;
     private String trailerUrl;
     private Boolean active;
-
-    @Enumerated(EnumType.STRING)
     private MovieStatus status;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
