@@ -13,7 +13,7 @@ import java.util.Date;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "genres")
+@Table(name = "tokens")
 public class InvalidatedToken extends AbstractEntity<Integer> {
     Date expiryTime;
     String token;
