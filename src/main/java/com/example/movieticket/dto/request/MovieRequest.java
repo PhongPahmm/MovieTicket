@@ -1,37 +1,26 @@
-package com.example.movieticket.model;
+package com.example.movieticket.dto.request;
 
 import com.example.movieticket.common.MovieStatus;
-import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity
-@Table(name = "movies")
-public class Movie extends AbstractEntity<Integer> {
+public class MovieRequest {
     private String title;
     private String description;
     private Integer durationMinutes;
     private LocalDate releaseDate;
     private String ageRating;
     private String director;
-
-    @ElementCollection
     private List<String> actors;
-
     private String language;
-    private String posterUrl;
+    private MultipartFile posterUrl;
     private String trailerUrl;
     private Boolean active;
-
-    @Enumerated(EnumType.STRING)
     private MovieStatus status;
 }
