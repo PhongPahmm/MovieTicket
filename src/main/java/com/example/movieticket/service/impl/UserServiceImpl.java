@@ -128,8 +128,8 @@ public class UserServiceImpl implements UserService {
         return mapToUserResponse(user);
     }
 
-
-    private UserResponse getCurrentUser() {
+    @Override
+    public UserResponse getCurrentUser() {
         var context = SecurityContextHolder.getContext().getAuthentication().getName();
         User user =
                 userRepository

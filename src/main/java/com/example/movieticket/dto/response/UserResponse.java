@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @Builder
 public class UserResponse {
-    private int id;
+    private Integer id;
     private String username;
     private String email;
     private String phoneNumber;

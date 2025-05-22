@@ -22,6 +22,6 @@ public class Review extends AbstractEntity<Integer>{
     @ManyToOne
     @JoinColumn(name = "movie_id")
     Movie movie;
-    int rating;
+    Integer rating;
     String comment;
 }
