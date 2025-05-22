@@ -2,10 +2,15 @@ package com.example.movieticket.service.impl;
 
 import com.example.movieticket.common.MovieStatus;
 import com.example.movieticket.dto.request.MovieRequest;
+import com.example.movieticket.dto.response.GenreResponse;
 import com.example.movieticket.dto.response.MovieResponse;
 import com.example.movieticket.exception.AppException;
 import com.example.movieticket.exception.ErrorCode;
+import com.example.movieticket.model.Genre;
 import com.example.movieticket.model.Movie;
+import com.example.movieticket.model.MovieGenre;
+import com.example.movieticket.repository.GenreRepository;
+import com.example.movieticket.repository.MovieGenreRepository;
 import com.example.movieticket.repository.MovieRepository;
 import com.example.movieticket.service.FileStorageService;
 import com.example.movieticket.service.MovieService;
@@ -17,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +30,9 @@ import java.util.List;
 public class MovieServiceImpl implements MovieService {
     MovieRepository movieRepository;
     FileStorageService fileStorageService;
+    MovieGenreRepository movieGenreRepository;
+    private final GenreRepository genreRepository;
+
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     public MovieResponse createMovie(MovieRequest request) {
@@ -46,6 +55,19 @@ public class MovieServiceImpl implements MovieService {
                 .active(true)
                 .build();
         var savedMovie = movieRepository.save(movie);
+        if(request.getGenreIds() != null) {
+            List<MovieGenre> movieGenres = request.getGenreIds()
+                    .stream().map(id -> {
+                        Genre genre =  genreRepository.findById(id)
+                                .orElseThrow(()-> new RuntimeException("Genre not found"));
+                        return MovieGenre.builder()
+                                .movie(savedMovie)
+                                .genre(genre)
+                                .build();
+                    })
+                    .toList();
+            movieGenreRepository.saveAll(movieGenres);
+        }
         return mapToMovieResponse(savedMovie);
     }
 
@@ -122,11 +144,28 @@ public class MovieServiceImpl implements MovieService {
                 .toList();
     }
 
+    @Override
+    public List<MovieResponse> getMovieByGenre(List<Integer> genreId) {
+        return movieRepository.findMovieByGenreIds(genreId)
+                .stream().map(this::mapToMovieResponse)
+                .toList();
+    }
+
     private MovieResponse mapToMovieResponse(Movie movie) {
+        List<GenreResponse> genreInfos = movieGenreRepository.findByMovie(movie)
+                .stream().map(mv ->{
+                    Genre genre = mv.getGenre();
+                    return GenreResponse.builder()
+                            .id(genre.getId())
+                            .name(genre.getName())
+                            .build();
+                })
+                .toList();
         return MovieResponse.builder()
                 .id(movie.getId())
                 .title(movie.getTitle())
                 .description(movie.getDescription())
+                .genres(genreInfos)
                 .durationMinutes(movie.getDurationMinutes())
                 .releaseDate(movie.getReleaseDate())
                 .ageRating(movie.getAgeRating())

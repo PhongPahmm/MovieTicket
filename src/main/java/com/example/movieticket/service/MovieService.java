@@ -15,4 +15,5 @@ public interface MovieService {
     List<MovieResponse> getAllNowShowingMovies();
     List<MovieResponse> getAllComingSoonMovies();
     List<MovieResponse> getMovieByReleaseDate(LocalDate releaseDate);
+    List<MovieResponse> getMovieByGenre(List<Integer> genreId);
 }

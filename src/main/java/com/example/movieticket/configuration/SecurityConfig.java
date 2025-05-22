@@ -42,6 +42,9 @@ public class SecurityConfig {
             "/movies/release-date",
             "/movies/coming-soon",
             "/movies/now-showing",
+            "/movies/find-by-genre",
+            "/genres",
+
     };
 
     @Value("${jwt.secret-key}")
