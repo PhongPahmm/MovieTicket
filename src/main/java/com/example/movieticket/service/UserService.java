@@ -13,4 +13,5 @@ public interface UserService {
     UserResponse getUserById(int userId);
     void deleteUser(int userId);
     UserResponse changeUserStatus(int userId, boolean isActive);
+    UserResponse getCurrentUser();
 }
