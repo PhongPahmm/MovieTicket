@@ -10,6 +10,7 @@ public enum ErrorCode {
     USER_EXISTED(1010, "User already existed", HttpStatus.BAD_REQUEST),
     PHONE_NO_EXISTED(1010, "Phone number already existed", HttpStatus.BAD_REQUEST),
     EMAIL_EXISTED(1010, "Email already existed", HttpStatus.BAD_REQUEST),
+    GENRE_EXISTED(1010, "Genre already existed", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND(1011, "User not found", HttpStatus.BAD_REQUEST),
     REVIEW_ALREADY_EXISTS(1011, "Review already existed", HttpStatus.BAD_REQUEST),
     ROLE_NOT_FOUND(1011, "Role not found", HttpStatus.BAD_REQUEST),

@@ -19,7 +19,7 @@ public class MovieResponse {
     private Integer durationMinutes;
     private LocalDate releaseDate;
     private String ageRating;
-//    private List<GenreResponse> genre;
+    private List<GenreResponse> genres;
     private String director;
     private List<String> actors;
     private String language;

@@ -1,5 +1,6 @@
 package com.example.movieticket.controller;
 
+import com.example.movieticket.dto.request.GenreRequest;
 import com.example.movieticket.dto.request.MovieRequest;
 import com.example.movieticket.dto.response.MovieResponse;
 import com.example.movieticket.dto.response.ResponseData;
@@ -85,6 +86,14 @@ public class MovieController {
                 .code(200)
                 .message("Successfully retrieved movies")
                 .data(movieService.getMovieByReleaseDate(releaseDate))
+                .build();
+    }
+    @PostMapping("/find-by-genre")
+    public ResponseData<List<MovieResponse>> getMovieByGenre(@RequestBody List<Integer> genreIds) {
+        return ResponseData.<List<MovieResponse>>builder()
+                .code(200)
+                .message("Successfully retrieved movies")
+                .data(movieService.getMovieByGenre(genreIds))
                 .build();
     }
 
