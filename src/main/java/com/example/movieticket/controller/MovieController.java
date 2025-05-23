@@ -2,6 +2,7 @@ package com.example.movieticket.controller;
 
 import com.example.movieticket.dto.request.MovieRequest;
 import com.example.movieticket.dto.response.MovieResponse;
+import com.example.movieticket.dto.response.PageResponse;
 import com.example.movieticket.dto.response.ResponseData;
 import com.example.movieticket.service.MovieService;
 import lombok.AccessLevel;
@@ -46,10 +47,12 @@ public class MovieController {
                 .build();
     }
     @GetMapping("")
-    public ResponseData<List<MovieResponse>> getAllUsers(){
-        return ResponseData.<List<MovieResponse>>builder()
+    public ResponseData<PageResponse<MovieResponse>> getAllMovies(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseData.<PageResponse<MovieResponse>>builder()
                 .code(200)
-                .data(movieService.getAllMovies())
+                .data(movieService.getAllMovies(page, size))
                 .message("Successfully retrieved all movies")
                 .build();
     }
@@ -62,37 +65,48 @@ public class MovieController {
                 .build();
     }
     @GetMapping("/now-showing")
-    public ResponseData<List<MovieResponse>> getNowShowingMovies(){
-        return ResponseData.<List<MovieResponse>>builder()
+    public ResponseData<PageResponse<MovieResponse>> getNowShowingMovies(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        return ResponseData.<PageResponse<MovieResponse>>builder()
                 .code(200)
                 .message("Successfully retrieved now showing movies")
-                .data(movieService.getAllNowShowingMovies())
+                .data(movieService.getAllNowShowingMovies(page, size))
                 .build();
     }
     @GetMapping("/coming-soon")
-    public ResponseData<List<MovieResponse>> getComingSoonMovies(){
-        return ResponseData.<List<MovieResponse>>builder()
+    public ResponseData<PageResponse<MovieResponse>> getComingSoonMovies(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        return ResponseData.<PageResponse<MovieResponse>>builder()
                 .code(200)
-                .message("Successfully retrieved now showing movies")
-                .data(movieService.getAllComingSoonMovies())
+                .message("Successfully retrieved coming soon movies")
+                .data(movieService.getAllComingSoonMovies(page, size))
                 .build();
     }
     @GetMapping("/release-date")
-    public ResponseData<List<MovieResponse>> getMovieByReleaseDate(
+    public ResponseData<PageResponse<MovieResponse>> getMovieByReleaseDate(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam("release-date")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate releaseDate) {
-        return ResponseData.<List<MovieResponse>>builder()
+        return ResponseData.<PageResponse<MovieResponse>>builder()
                 .code(200)
                 .message("Successfully retrieved movies")
-                .data(movieService.getMovieByReleaseDate(releaseDate))
+                .data(movieService.getMovieByReleaseDate(releaseDate, page, size))
                 .build();
     }
     @PostMapping("/find-by-genre")
-    public ResponseData<List<MovieResponse>> getMovieByGenre(@RequestBody List<Integer> genreIds) {
-        return ResponseData.<List<MovieResponse>>builder()
+    public ResponseData<PageResponse<MovieResponse>> getMovieByGenre(
+            @RequestBody List<Integer> genreIds,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseData.<PageResponse<MovieResponse>>builder()
                 .code(200)
                 .message("Successfully retrieved movies")
-                .data(movieService.getMovieByGenre(genreIds))
+                .data(movieService.getMovieByGenre(genreIds, page, size))
                 .build();
     }
 

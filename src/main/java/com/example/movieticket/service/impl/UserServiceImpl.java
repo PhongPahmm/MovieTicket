@@ -3,6 +3,7 @@ package com.example.movieticket.service.impl;
 import com.example.movieticket.common.UserRole;
 import com.example.movieticket.dto.request.UserCreationRequest;
 import com.example.movieticket.dto.request.UserUpdateRequest;
+import com.example.movieticket.dto.response.PageResponse;
 import com.example.movieticket.dto.response.UserResponse;
 import com.example.movieticket.exception.AppException;
 import com.example.movieticket.exception.ErrorCode;
@@ -11,10 +12,13 @@ import com.example.movieticket.repository.InvalidatedTokenRepository;
 import com.example.movieticket.repository.UserRepository;
 import com.example.movieticket.service.FileStorageService;
 import com.example.movieticket.service.UserService;
+import com.example.movieticket.util.PaginationUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,7 +28,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -113,11 +116,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
-    public List<UserResponse> getAllUsers() {
-        return userRepository.findAll()
-                .stream()
-                .map(this::mapToUserResponse)
-                .toList();
+    public PageResponse<UserResponse> getAllUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        var users =  userRepository.findAll(pageable);
+         return PaginationUtil.mapToPageResponse(users, this::mapToUserResponse);
     }
 
     @Override
