@@ -1,6 +1,7 @@
 package com.example.movieticket.service.impl;
 
 import com.example.movieticket.common.MovieStatus;
+import com.example.movieticket.common.UserRole;
 import com.example.movieticket.dto.request.MovieRequest;
 import com.example.movieticket.dto.response.GenreResponse;
 import com.example.movieticket.dto.response.MovieResponse;
@@ -15,10 +16,12 @@ import com.example.movieticket.repository.MovieGenreRepository;
 import com.example.movieticket.repository.MovieRepository;
 import com.example.movieticket.service.FileStorageService;
 import com.example.movieticket.service.MovieService;
+import com.example.movieticket.service.UserService;
 import com.example.movieticket.util.PaginationUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,6 +38,7 @@ public class MovieServiceImpl implements MovieService {
     FileStorageService fileStorageService;
     MovieGenreRepository movieGenreRepository;
     GenreRepository genreRepository;
+    private final UserService userService;
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
@@ -104,7 +108,14 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public PageResponse<MovieResponse> getAllMovies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        var movies = movieRepository.findAll(pageable);
+        var user = userService.getCurrentUser();
+        Page<Movie> movies;
+        if(user != null && user.getRole().equals(UserRole.ADMIN)){
+            movies = movieRepository.findAll(pageable);
+        }else {
+            movies = movieRepository.findAllByActiveTrue(pageable);
+        }
+
         return PaginationUtil.mapToPageResponse(movies, this::mapToMovieResponse);
     }
 
@@ -127,28 +138,54 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public PageResponse<MovieResponse> getAllNowShowingMovies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-       var movies = movieRepository.findAllByStatus(MovieStatus.NOW_SHOWING, pageable);
+        var user = userService.getCurrentUser();
+        Page<Movie> movies;
+        if (user != null && user.getRole().equals(UserRole.ADMIN)){
+            movies = movieRepository.findAllByStatus(MovieStatus.NOW_SHOWING, pageable);
+        } else {
+            movies = movieRepository.findAllByStatusAndActiveTrue(MovieStatus.NOW_SHOWING, pageable);
+        }
          return PaginationUtil.mapToPageResponse(movies, this::mapToMovieResponse);
     }
 
     @Override
     public PageResponse<MovieResponse> getAllComingSoonMovies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        var movies = movieRepository.findAllByStatus(MovieStatus.COMING_SOON, pageable);
+        var user = userService.getCurrentUser();
+        Page<Movie> movies;
+        if(user != null && user.getRole().equals(UserRole.ADMIN)){
+            movies = movieRepository.findAllByStatus(MovieStatus.COMING_SOON, pageable);
+        }else {
+            movies = movieRepository.findAllByStatusAndActiveTrue(MovieStatus.COMING_SOON, pageable);
+        }
+
         return PaginationUtil.mapToPageResponse(movies, this::mapToMovieResponse);
     }
 
     @Override
     public PageResponse<MovieResponse> getMovieByReleaseDate(LocalDate releaseDate, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        var movies = movieRepository.findAllByReleaseDate(releaseDate, pageable);
+        var user = userService.getCurrentUser();
+        Page<Movie> movies;
+        if (user != null && user.getRole().equals(UserRole.ADMIN)){
+            movies = movieRepository.findAllByReleaseDate(releaseDate, pageable);
+        }else {
+            movies = movieRepository.findAllByReleaseDateAndActiveTrue(releaseDate, pageable);
+        }
         return PaginationUtil.mapToPageResponse(movies, this::mapToMovieResponse);
     }
 
     @Override
     public PageResponse<MovieResponse> getMovieByGenre(List<Integer> genreId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        var movies =  movieRepository.findMovieByGenreIds(genreId, pageable);
+        var user = userService.getCurrentUser();
+        Page<Movie> movies;
+        if (user != null && user.getRole().equals(UserRole.ADMIN)){
+            movies =  movieRepository.findMovieByGenreIds(genreId, pageable);
+        }else {
+            movies = movieRepository.findMovieByGenreIdsAndActiveTrue(genreId, pageable);
+        }
+
         return PaginationUtil.mapToPageResponse(movies, this::mapToMovieResponse);
     }
 

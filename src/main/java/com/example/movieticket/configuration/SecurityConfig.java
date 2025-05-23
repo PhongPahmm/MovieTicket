@@ -45,6 +45,7 @@ public class SecurityConfig {
             "/movies/find-by-genre",
             "/genres",
             "/screens/{screenId}",
+            "/shows/movie/{movieId}",
     };
 
     @Value("${jwt.secret-key}")

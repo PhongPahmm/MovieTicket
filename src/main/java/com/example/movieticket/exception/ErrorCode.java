@@ -16,12 +16,18 @@ public enum ErrorCode {
     ROLE_NOT_FOUND(1011, "Role not found", HttpStatus.BAD_REQUEST),
     MOVIE_NOT_FOUND(1011, "Movie not found", HttpStatus.BAD_REQUEST),
     SCREEN_NOT_FOUND(1011, "Screen not found", HttpStatus.BAD_REQUEST),
+    SHOW_NOT_FOUND(1011, "Show not found", HttpStatus.BAD_REQUEST),
     REVIEW_NOT_FOUND(1011, "Review not found", HttpStatus.BAD_REQUEST),
     USER_NAME_INVALID(1012, "User name must be at least 3 characters", HttpStatus.BAD_REQUEST),
     PASSWORD_INVALID(1012, "Password must be at least 6 characters", HttpStatus.BAD_REQUEST),
     UNAUTHENTICATED(1013, "Unauthenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1014, "You do not have permission", HttpStatus.FORBIDDEN),
-    USER_INACTIVE(1015, "Account is locked", HttpStatus.FORBIDDEN),;
+    USER_INACTIVE(1015, "Account is locked", HttpStatus.FORBIDDEN),
+    INVALID_SHOW_DATE(1020, "Show date must be after or on movie release date", HttpStatus.BAD_REQUEST),
+    INVALID_SHOW_TIME(1021, "Start time must be before end time", HttpStatus.BAD_REQUEST),
+    INVALID_DURATION(1022, "Showtime duration is shorter than movie duration", HttpStatus.BAD_REQUEST),
+    SHOWTIME_CONFLICT(1023, "Showtime conflicts with another show in the same screen", HttpStatus.CONFLICT),
+    ;
     private final int errorCode;
     private final String errorMessage;
     private final HttpStatusCode httpStatusCode;
