@@ -12,9 +12,12 @@ import com.example.movieticket.repository.ReviewRepository;
 import com.example.movieticket.repository.UserRepository;
 import com.example.movieticket.service.ReviewService;
 import com.example.movieticket.service.UserService;
+import com.example.movieticket.util.PaginationUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -90,15 +93,16 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public MovieReviewResponse getReviewByMovieId(Integer movieId) {
+    public MovieReviewResponse getReviewByMovieId(Integer movieId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
         var movie = movieRepository.findById(movieId)
                 .orElseThrow(()-> new AppException(ErrorCode.MOVIE_NOT_FOUND));
-        var reviews = reviewRepository.findByMovie(movie);
+        var reviews = reviewRepository.findByMovie(movie, pageable);
         var averageRating = getAverageRating(movieId);
 
         return MovieReviewResponse.builder()
                 .averageRating(averageRating)
-                .reviews(reviews.stream().map(this::mapToReviewResponse).toList())
+                .reviews(PaginationUtil.mapToPageResponse(reviews, this::mapToReviewResponse))
                 .build();
     }
 

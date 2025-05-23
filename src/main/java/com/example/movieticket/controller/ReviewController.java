@@ -35,8 +35,11 @@ public class ReviewController {
                 .build();
     }
     @GetMapping("/movie/{movieId}")
-    public ResponseData<MovieReviewResponse> getReviewByMovieId(@PathVariable int movieId) {
-        var reviews = reviewService.getReviewByMovieId(movieId);
+    public ResponseData<MovieReviewResponse> getReviewByMovieId(
+            @PathVariable int movieId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        var reviews = reviewService.getReviewByMovieId(movieId, page, size);
         return ResponseData.<MovieReviewResponse>builder()
                 .code(200)
                 .data(reviews)

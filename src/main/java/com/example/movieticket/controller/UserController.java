@@ -3,6 +3,7 @@ package com.example.movieticket.controller;
 
 import com.example.movieticket.dto.request.UserCreationRequest;
 import com.example.movieticket.dto.request.UserUpdateRequest;
+import com.example.movieticket.dto.response.PageResponse;
 import com.example.movieticket.dto.response.ResponseData;
 import com.example.movieticket.dto.response.UserResponse;
 import com.example.movieticket.service.UserService;
@@ -11,8 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/users")
@@ -34,10 +33,12 @@ public class UserController {
                 .build();
     }
     @GetMapping("")
-    public ResponseData<List<UserResponse>> getAllUsers(){
-        return ResponseData.<List<UserResponse>>builder()
+    public ResponseData<PageResponse<UserResponse>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size){
+        return ResponseData.<PageResponse<UserResponse>>builder()
                 .code(200)
-                .data(userService.getAllUsers())
+                .data(userService.getAllUsers(page, size))
                 .message("Successfully retrieved all users")
                 .build();
     }

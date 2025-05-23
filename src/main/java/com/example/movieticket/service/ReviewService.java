@@ -11,5 +11,5 @@ public interface ReviewService {
     ReviewResponse updateReview(int reviewId, ReviewRequest request);
     List<ReviewResponse> getAllReviews();
     Void deleteReview(int reviewId);
-    MovieReviewResponse getReviewByMovieId(Integer movieId);
+    MovieReviewResponse getReviewByMovieId(Integer movieId, int page, int size);
 }

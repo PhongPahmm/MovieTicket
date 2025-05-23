@@ -4,6 +4,7 @@ import com.example.movieticket.common.MovieStatus;
 import com.example.movieticket.dto.request.MovieRequest;
 import com.example.movieticket.dto.response.GenreResponse;
 import com.example.movieticket.dto.response.MovieResponse;
+import com.example.movieticket.dto.response.PageResponse;
 import com.example.movieticket.exception.AppException;
 import com.example.movieticket.exception.ErrorCode;
 import com.example.movieticket.model.Genre;
@@ -14,15 +15,17 @@ import com.example.movieticket.repository.MovieGenreRepository;
 import com.example.movieticket.repository.MovieRepository;
 import com.example.movieticket.service.FileStorageService;
 import com.example.movieticket.service.MovieService;
+import com.example.movieticket.util.PaginationUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +34,7 @@ public class MovieServiceImpl implements MovieService {
     MovieRepository movieRepository;
     FileStorageService fileStorageService;
     MovieGenreRepository movieGenreRepository;
-    private final GenreRepository genreRepository;
+    GenreRepository genreRepository;
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
@@ -99,10 +102,10 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public List<MovieResponse> getAllMovies() {
-        return movieRepository.findAll()
-                .stream().map(this::mapToMovieResponse)
-                .toList();
+    public PageResponse<MovieResponse> getAllMovies(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        var movies = movieRepository.findAll(pageable);
+        return PaginationUtil.mapToPageResponse(movies, this::mapToMovieResponse);
     }
 
     @Override
@@ -122,33 +125,31 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public List<MovieResponse> getAllNowShowingMovies() {
-       var movies = movieRepository.findAllByStatus(MovieStatus.NOW_SHOWING);
-         return movies.stream()
-                 .map(this::mapToMovieResponse)
-                 .toList();
+    public PageResponse<MovieResponse> getAllNowShowingMovies(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+       var movies = movieRepository.findAllByStatus(MovieStatus.NOW_SHOWING, pageable);
+         return PaginationUtil.mapToPageResponse(movies, this::mapToMovieResponse);
     }
 
     @Override
-    public List<MovieResponse> getAllComingSoonMovies() {
-        var movies = movieRepository.findAllByStatus(MovieStatus.COMING_SOON);
-        return movies.stream()
-                .map(this::mapToMovieResponse)
-                .toList();
+    public PageResponse<MovieResponse> getAllComingSoonMovies(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        var movies = movieRepository.findAllByStatus(MovieStatus.COMING_SOON, pageable);
+        return PaginationUtil.mapToPageResponse(movies, this::mapToMovieResponse);
     }
 
     @Override
-    public List<MovieResponse> getMovieByReleaseDate(LocalDate releaseDate) {
-        return movieRepository.findAllByReleaseDate(releaseDate)
-                .stream().map(this::mapToMovieResponse)
-                .toList();
+    public PageResponse<MovieResponse> getMovieByReleaseDate(LocalDate releaseDate, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        var movies = movieRepository.findAllByReleaseDate(releaseDate, pageable);
+        return PaginationUtil.mapToPageResponse(movies, this::mapToMovieResponse);
     }
 
     @Override
-    public List<MovieResponse> getMovieByGenre(List<Integer> genreId) {
-        return movieRepository.findMovieByGenreIds(genreId)
-                .stream().map(this::mapToMovieResponse)
-                .toList();
+    public PageResponse<MovieResponse> getMovieByGenre(List<Integer> genreId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        var movies =  movieRepository.findMovieByGenreIds(genreId, pageable);
+        return PaginationUtil.mapToPageResponse(movies, this::mapToMovieResponse);
     }
 
     private MovieResponse mapToMovieResponse(Movie movie) {
