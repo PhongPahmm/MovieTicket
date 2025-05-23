@@ -132,12 +132,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse getCurrentUser() {
-        var context = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user =
-                userRepository
-                        .findByUsername(context)
-                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        return mapToUserResponse(user);
+        try {
+            var context = SecurityContextHolder.getContext().getAuthentication().getName();
+            return userRepository.findByUsername(context)
+                    .map(this::mapToUserResponse)
+                    .orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override

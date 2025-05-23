@@ -17,4 +17,13 @@ public interface MovieRepository extends JpaRepository<Movie, Integer> {
     @Query("SELECT DISTINCT mg.movie FROM MovieGenre mg " +
             "WHERE (:genreIds IS NULL OR mg.genre.id IN :genreIds)")
     Page<Movie> findMovieByGenreIds(@Param("genreIds") List<Integer> genreIds, Pageable pageable);
+
+    Page<Movie> findAllByActiveTrue(Pageable pageable);
+
+    @Query("SELECT DISTINCT mg.movie FROM MovieGenre mg " +
+            "WHERE (:genreIds IS NULL OR mg.genre.id IN :genreIds) " +
+            "AND mg.movie.active = true")
+    Page<Movie> findMovieByGenreIdsAndActiveTrue(@Param("genreIds") List<Integer> genreIds, Pageable pageable);
+    Page<Movie> findAllByStatusAndActiveTrue(MovieStatus status, Pageable pageable);
+    Page<Movie> findAllByReleaseDateAndActiveTrue(LocalDate releaseDate, Pageable pageable);
 }
