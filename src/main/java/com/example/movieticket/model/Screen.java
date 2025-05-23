@@ -15,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 @Table(name = "screens")
 public class Screen extends AbstractEntity<Integer> {
     String name;
-    int totalSeats;
-    boolean is3D;
-    boolean active;
+    Integer totalSeats;
+    Boolean is3D;
+    Boolean active;
 }

@@ -1,6 +1,5 @@
 package com.example.movieticket.controller;
 
-import com.example.movieticket.dto.request.GenreRequest;
 import com.example.movieticket.dto.request.MovieRequest;
 import com.example.movieticket.dto.response.MovieResponse;
 import com.example.movieticket.dto.response.ResponseData;

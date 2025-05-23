@@ -15,6 +15,7 @@ public enum ErrorCode {
     REVIEW_ALREADY_EXISTS(1011, "Review already existed", HttpStatus.BAD_REQUEST),
     ROLE_NOT_FOUND(1011, "Role not found", HttpStatus.BAD_REQUEST),
     MOVIE_NOT_FOUND(1011, "Movie not found", HttpStatus.BAD_REQUEST),
+    SCREEN_NOT_FOUND(1011, "Screen not found", HttpStatus.BAD_REQUEST),
     REVIEW_NOT_FOUND(1011, "Review not found", HttpStatus.BAD_REQUEST),
     USER_NAME_INVALID(1012, "User name must be at least 3 characters", HttpStatus.BAD_REQUEST),
     PASSWORD_INVALID(1012, "Password must be at least 6 characters", HttpStatus.BAD_REQUEST),
