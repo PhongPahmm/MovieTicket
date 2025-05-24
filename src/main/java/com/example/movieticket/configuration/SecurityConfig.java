@@ -44,6 +44,9 @@ public class SecurityConfig {
             "/movies/now-showing",
             "/movies/find-by-genre",
             "/genres",
+            "/prices",
+            "/prices/valid-price",
+            "/prices/show/{movieId}",
             "/screens/{screenId}",
             "/shows/movie/{movieId}",
     };

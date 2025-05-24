@@ -1,9 +1,7 @@
 package com.example.movieticket.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.example.movieticket.common.SeatType;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -21,7 +19,9 @@ public class Price extends AbstractEntity<Integer> {
     @ManyToOne
     @JoinColumn(name = "show_id")
     Show show;
-    int amount;
+    Integer amount;
+    @Enumerated(EnumType.STRING)
+    SeatType seatType;
     LocalDate validFrom;
     LocalDate validTo;
 }
