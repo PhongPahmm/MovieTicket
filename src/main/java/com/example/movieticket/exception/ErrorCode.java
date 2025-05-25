@@ -16,6 +16,7 @@ public enum ErrorCode {
     ROLE_NOT_FOUND(1011, "Role not found", HttpStatus.BAD_REQUEST),
     MOVIE_NOT_FOUND(1011, "Movie not found", HttpStatus.BAD_REQUEST),
     SCREEN_NOT_FOUND(1011, "Screen not found", HttpStatus.BAD_REQUEST),
+    SEAT_NOT_FOUND(1011, "Seat not found", HttpStatus.BAD_REQUEST),
     SHOW_NOT_FOUND(1011, "Show not found", HttpStatus.BAD_REQUEST),
     PRICE_NOT_FOUND(1011, "Price not found", HttpStatus.BAD_REQUEST),
     REVIEW_NOT_FOUND(1011, "Review not found", HttpStatus.BAD_REQUEST),
