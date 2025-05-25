@@ -49,6 +49,7 @@ public class SecurityConfig {
             "/prices/show/{movieId}",
             "/screens/{screenId}",
             "/shows/movie/{movieId}",
+            "/seats/**"
     };
 
     @Value("${jwt.secret-key}")
