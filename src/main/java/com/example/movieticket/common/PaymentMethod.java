@@ -5,7 +5,7 @@ public enum PaymentMethod {
     DEBIT_CARD,
     PAYPAL,
     MOMO,
-    ZALO_PAY,
+    VN_PAY,
     APPLE_PAY,
     GOOGLE_PAY,
     CASH

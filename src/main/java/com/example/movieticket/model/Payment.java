@@ -18,7 +18,7 @@ public class Payment extends AbstractEntity<Integer> {
     @ManyToOne
     @JoinColumn(name = "user_id")
     User user;
-    int amount;
+    Double amount;
 
     @Enumerated(EnumType.STRING)
     PaymentMethod paymentMethod;
@@ -26,4 +26,6 @@ public class Payment extends AbstractEntity<Integer> {
     @Enumerated(EnumType.STRING)
     PaymentStatus status;
 
+    String orderInfo;
+    String returnUrl;
 }
