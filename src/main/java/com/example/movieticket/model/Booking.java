@@ -25,7 +25,7 @@ public class Booking extends AbstractEntity<Integer> {
 
     LocalDateTime bookingTime;
     LocalDateTime expireTime;
-    int totalAmount;
+    Double totalAmount;
 
     @Enumerated(EnumType.STRING)
     BookingStatus status;

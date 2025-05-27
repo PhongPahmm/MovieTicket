@@ -13,6 +13,7 @@ import com.example.movieticket.service.SeatService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,7 +26,9 @@ public class SeatServiceImpl implements SeatService {
     SeatRepository seatRepository;
     ShowRepository showRepository;
     BookingSeatRepository bookingSeatRepository;
+
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public SeatResponse createSeat(SeatRequest request) {
         var screen = screenRepository.findById(request.getScreenId())
                 .orElseThrow(() -> new AppException(ErrorCode.SCREEN_NOT_FOUND));
@@ -41,6 +44,7 @@ public class SeatServiceImpl implements SeatService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public SeatResponse updateSeat(Integer seatId, SeatRequest request) {
         var seat = seatRepository.findById(seatId)
                 .orElseThrow(() -> new AppException(ErrorCode.SEAT_NOT_FOUND));
@@ -76,6 +80,7 @@ public class SeatServiceImpl implements SeatService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public Void deleteSeat(Integer seatId) {
         seatRepository.deleteById(seatId);
         return null;
