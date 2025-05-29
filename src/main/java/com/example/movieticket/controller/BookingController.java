@@ -20,7 +20,7 @@ public class BookingController {
 
     BookingService bookingService;
 
-    @PostMapping
+    @PostMapping("/book")
     public ResponseData<BookingResponse> createBooking(@RequestBody BookingRequest request) {
         BookingResponse response = bookingService.createBooking(request);
         return ResponseData.<BookingResponse>builder()
@@ -30,7 +30,7 @@ public class BookingController {
                 .build();
     }
 
-    @GetMapping("/payment-return")
+    @GetMapping("/payment-return/vnpay-payment")
     public ResponseData<BookingResponse> handlePaymentReturn(HttpServletRequest request) {
         BookingResponse response = bookingService.handlePaymentReturn(request);
         return ResponseData.<BookingResponse>builder()
@@ -40,9 +40,9 @@ public class BookingController {
                 .build();
     }
 
-    @GetMapping("/{id}")
-    public ResponseData<BookingResponse> getBookingById(@PathVariable Integer id) {
-        BookingResponse response = bookingService.getBookingById(id);
+    @GetMapping("/{bookingId}")
+    public ResponseData<BookingResponse> getBookingById(@PathVariable Integer bookingId) {
+        BookingResponse response = bookingService.getBookingById(bookingId);
         return ResponseData.<BookingResponse>builder()
                 .code(200)
                 .message("Booking fetched")

@@ -28,4 +28,5 @@ public class Payment extends AbstractEntity<Integer> {
 
     String orderInfo;
     String returnUrl;
+    String txnRef;
 }

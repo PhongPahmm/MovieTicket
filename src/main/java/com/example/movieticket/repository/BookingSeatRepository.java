@@ -9,7 +9,7 @@ import java.util.List;
 public interface BookingSeatRepository extends JpaRepository<BookingSeat, Integer> {
     List<BookingSeat> findByBookingShow_Id(Integer showId);
 
-    boolean existsByBooking_Show_IdAndSeat_IdIn(Integer showId, List<Integer> seats);
-
     List<BookingSeat> findByBooking(Booking booking);
+
+    List<BookingSeat> findByBooking_Show_IdAndSeat_IdIn(Integer showId, List<Integer> seats);
 }

@@ -35,6 +35,14 @@ public class ShowController {
                 .build();
     }
 
+    @GetMapping("/{showId}")
+    public ResponseData<ShowResponse> getShowById(@PathVariable Integer showId){
+        return ResponseData.<ShowResponse>builder()
+                .code(200)
+                .message("Successfully retrieved show")
+                .data(showService.getShowById(showId))
+                .build();
+    }
     @GetMapping("")
     public ResponseData<PageResponse<ShowResponse>> getAllShow(
             @RequestParam(defaultValue = "0") int page,

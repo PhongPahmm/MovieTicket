@@ -1,6 +1,5 @@
 package com.example.movieticket.service.impl;
 
-import com.example.movieticket.common.MovieStatus;
 import com.example.movieticket.common.UserRole;
 import com.example.movieticket.dto.request.ShowRequest;
 import com.example.movieticket.dto.response.PageResponse;
@@ -129,6 +128,13 @@ public class ShowServiceImpl implements ShowService {
         Page<Show> shows = showRepository.findAll(pageable);
 
         return PaginationUtil.mapToPageResponse(shows, this::makeShowResponse);
+    }
+
+    @Override
+    public ShowResponse getShowById(Integer showId) {
+        var show = showRepository.findById(showId)
+                .orElseThrow(() -> new AppException(ErrorCode.SHOW_NOT_FOUND));
+        return makeShowResponse(show);
     }
 
     private ShowResponse makeShowResponse(Show show) {

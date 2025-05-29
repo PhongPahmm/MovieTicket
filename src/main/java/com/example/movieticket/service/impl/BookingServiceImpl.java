@@ -7,6 +7,8 @@ import com.example.movieticket.common.SeatType;
 import com.example.movieticket.dto.request.BookingRequest;
 import com.example.movieticket.dto.response.BookedSeatResponse;
 import com.example.movieticket.dto.response.BookingResponse;
+import com.example.movieticket.exception.AppException;
+import com.example.movieticket.exception.ErrorCode;
 import com.example.movieticket.model.*;
 import com.example.movieticket.repository.*;
 import com.example.movieticket.service.BookingService;
@@ -15,6 +17,7 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -25,6 +28,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class BookingServiceImpl implements BookingService {
     BookingRepository bookingRepository;
     BookingSeatRepository bookingSeatRepository;
@@ -38,25 +42,26 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     @Override
     public BookingResponse createBooking(BookingRequest request) {
-        // Validate user
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        // Validate show
         Show show = showRepository.findById(request.getShowId())
-                .orElseThrow(() -> new RuntimeException("Show not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.SHOW_NOT_FOUND));
 
         // Validate seats availability
         List<Seat> seats = seatRepository.findAllById(request.getSeats());
         if (seats.size() != request.getSeats().size()) {
-            throw new RuntimeException("Some seats not found");
+            throw new AppException(ErrorCode.SEAT_NOT_FOUND);
         }
 
         // Check if seats are already booked for this show
-        boolean seatsAlreadyBooked = bookingSeatRepository.existsByBooking_Show_IdAndSeat_IdIn(
+        List<BookingSeat> bookedSeats = bookingSeatRepository.findByBooking_Show_IdAndSeat_IdIn(
                 request.getShowId(), request.getSeats());
-        if (seatsAlreadyBooked) {
-            throw new RuntimeException("Some seats are already booked");
+        if (!bookedSeats.isEmpty()) {
+            List<Integer> bookedSeatIds = bookedSeats.stream()
+                    .map(bs -> bs.getSeat().getId())
+                    .toList();
+            throw new RuntimeException("Seats already booked: " + bookedSeatIds);
         }
 
         // Calculate total amount using Price table
@@ -113,11 +118,8 @@ public class BookingServiceImpl implements BookingService {
                 String.valueOf(payment.getId()),
                 request.getReturnUrl()
         );
-
-        // Sử dụng mapToBookingResponse
         BookingResponse response = mapToBookingResponse(booking);
 
-        // Thêm paymentUrl và returnUrl rồi trả về
         response.setPaymentUrl(paymentUrl);
         response.setReturnUrl(request.getReturnUrl());
 
@@ -130,10 +132,9 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponse handlePaymentReturn(HttpServletRequest request) {
         int paymentResult = vnPayService.orderReturn(request);
 
-        String txnRef = request.getParameter("vnp_TxnRef");
-        Integer paymentId = Integer.parseInt(txnRef);
+        var paymentId = request.getParameter("vnp_OrderInfo");
 
-        Payment payment = paymentRepository.findById(paymentId)
+        Payment payment = paymentRepository.findById(Integer.valueOf(paymentId))
                 .orElseThrow(() -> new RuntimeException("Payment not found: " + paymentId));
         Booking booking = bookingRepository.findByPayment(payment)
                 .orElseThrow(() -> new RuntimeException("Booking not found for payment: " + payment.getId()));
@@ -155,13 +156,7 @@ public class BookingServiceImpl implements BookingService {
         paymentRepository.save(payment);
         bookingRepository.save(booking);
 
-        return BookingResponse.builder()
-                .bookingId(booking.getId())
-                .paymentId(payment.getId())
-                .totalAmount(booking.getTotalAmount())
-                .status(booking.getStatus())
-                .paymentStatus(payment.getStatus())
-                .build();
+        return mapToBookingResponse(booking);
     }
 
     @Transactional
