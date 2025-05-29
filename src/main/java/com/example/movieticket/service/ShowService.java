@@ -10,4 +10,5 @@ public interface ShowService {
     ShowResponse changeActive(Integer showId, Boolean active);
     PageResponse<ShowResponse> getShowByMovie(Integer movieId, int page, int size);
     PageResponse<ShowResponse> getAllShow(int page, int size);
+    ShowResponse getShowById(Integer showId);
 }
