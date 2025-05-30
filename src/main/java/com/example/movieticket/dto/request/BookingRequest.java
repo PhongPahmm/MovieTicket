@@ -8,7 +8,6 @@ import java.util.List;
 @Getter
 @Setter
 public class BookingRequest {
-    Integer userId;
     Integer showId;
     List<Integer> seats;
     PaymentRequest paymentRequest;

@@ -6,6 +6,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -33,4 +34,8 @@ public class Booking extends AbstractEntity<Integer> {
     @OneToOne
     @JoinColumn(name = "payment_id")
     Payment payment;
+
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    List<BookingSeat> bookingSeats;
+
 }
