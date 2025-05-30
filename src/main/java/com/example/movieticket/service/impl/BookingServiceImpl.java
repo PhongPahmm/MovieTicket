@@ -12,6 +12,9 @@ import com.example.movieticket.exception.ErrorCode;
 import com.example.movieticket.model.*;
 import com.example.movieticket.repository.*;
 import com.example.movieticket.service.BookingService;
+import com.example.movieticket.service.EmailService;
+import com.example.movieticket.service.UserService;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -38,11 +41,15 @@ public class BookingServiceImpl implements BookingService {
     SeatRepository seatRepository;
     PriceRepository priceRepository;
     VNPayService vnPayService;
+    EmailService emailService;
+    private final UserService userService;
 
     @Transactional
     @Override
     public BookingResponse createBooking(BookingRequest request) {
-        User user = userRepository.findById(request.getUserId())
+        var currentUser = userService.getCurrentUser();
+
+        User user = userRepository.findById(currentUser.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         Show show = showRepository.findById(request.getShowId())
@@ -143,6 +150,11 @@ public class BookingServiceImpl implements BookingService {
             // Payment successful
             payment.setStatus(PaymentStatus.SUCCESS);
             booking.setStatus(BookingStatus.CONFIRMED);
+            try {
+                emailService.sendBookingConfirmationEmail(booking);
+            } catch (MessagingException e) {
+                log.error("Failed to send booking confirmation email", e);
+            }
         } else if (paymentResult == 0) {
             // Payment failed
             payment.setStatus(PaymentStatus.FAILED);
@@ -193,6 +205,12 @@ public class BookingServiceImpl implements BookingService {
         return bookings.stream()
                 .map(this::mapToBookingResponse)
                 .toList();
+    }
+
+    @Override
+    public Booking getBookingEntityById(Integer bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
     }
 
     private BookingResponse mapToBookingResponse(Booking booking) {
