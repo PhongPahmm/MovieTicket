@@ -26,14 +26,25 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username:
-    password:
+    username: phongphp03@gmail.com
+    password: izdu gqon ufde tjet
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id:
+            client-secret:
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - profile
+              - email
 jwt:
   secret-key:
   valid-duration: 3600 #in seconds

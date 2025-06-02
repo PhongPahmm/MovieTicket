@@ -33,6 +33,7 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
     private final InvalidatedTokenRepository invalidatedTokenRepository;
+    private final CustomSuccessHandler customSuccessHandler;
     private static final String[] White_List = {
             "/auth/**",
             "/reviews/**",
@@ -51,7 +52,9 @@ public class SecurityConfig {
             "/shows/movie/{movieId}",
             "/seat/screen/{screenId}",
             "/seat/show/{showId}",
-            "/bookings/**"
+            "/bookings/**",
+            "/oauth2/**",
+            "/login/oauth2/**"
     };
 
     @Value("${jwt.secret-key}")
@@ -70,6 +73,10 @@ public class SecurityConfig {
                 .oauth2ResourceServer(oauth2 ->
                         oauth2
                                 .jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder())))
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("http://localhost:5173/login")
+                        .successHandler(customSuccessHandler)
+                        .failureUrl("http://localhost:5173/login?error"))
                 .addFilterBefore(new JwtAuthenticationFilter(invalidatedTokenRepository), BearerTokenAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
@@ -96,7 +103,7 @@ public class SecurityConfig {
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.setAllowedOrigins(List.of("*"));
+        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173"));
         corsConfiguration.setAllowedMethods(List.of("*"));
         corsConfiguration.setAllowedHeaders(List.of("*"));
         corsConfiguration.setAllowCredentials(true);
