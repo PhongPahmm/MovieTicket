@@ -10,7 +10,6 @@ import java.util.List;
 public interface BookingService {
     BookingResponse createBooking(BookingRequest request);
     BookingResponse handlePaymentReturn(HttpServletRequest request);
-    void cancelExpiredBookings();
     BookingResponse getBookingById(Integer bookingId);
     List<BookingResponse> getUserBookings(Integer userId);
     Booking getBookingEntityById(Integer bookingId);

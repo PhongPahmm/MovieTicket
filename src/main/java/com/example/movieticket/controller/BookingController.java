@@ -60,12 +60,4 @@ public class BookingController {
                 .build();
     }
 
-    @PostMapping("/cancel-expired")
-    public ResponseData<Void> cancelExpiredBookings() {
-        bookingService.cancelExpiredBookings();
-        return ResponseData.<Void>builder()
-                .code(200)
-                .message("Expired bookings cancelled")
-                .build();
-    }
 }

@@ -15,4 +15,5 @@ public class SeatResponse {
     private Integer number;
     private SeatType seatType;
     private Boolean active;
+    private boolean booked;
 }

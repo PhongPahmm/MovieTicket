@@ -34,7 +34,7 @@ public class SeatController {
 
     @GetMapping("/show/{showId}")
     public ResponseEntity<ResponseData<List<SeatResponse>>> getAvailableSeatByShow(@PathVariable Integer showId) {
-        List<SeatResponse> seats = seatService.getAvailableSeatsByShow(showId);
+        List<SeatResponse> seats = seatService.getSeatsByShow(showId);
         return ResponseEntity.ok(
                 ResponseData.<List<SeatResponse>>builder()
                         .code(200)
