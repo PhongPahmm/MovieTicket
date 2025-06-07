@@ -137,6 +137,25 @@ public class ShowServiceImpl implements ShowService {
         return makeShowResponse(show);
     }
 
+    @Override
+    public PageResponse<ShowResponse> getShowByMovieAndDate(Integer movieId, LocalDate date, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        var movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
+
+        Page<Show> shows;
+        var user = userService.getCurrentUser();
+
+        if (user != null && user.getRole().equals(UserRole.ADMIN)) {
+            shows = showRepository.findByMovieAndShowDate(movie, date, pageable);
+        } else {
+            shows = showRepository.findByMovieAndShowDateAndActiveTrue(movie, date, pageable);
+        }
+
+        return PaginationUtil.mapToPageResponse(shows, this::makeShowResponse);
+    }
+
+
     private ShowResponse makeShowResponse(Show show) {
         return ShowResponse.builder()
                 .showId(show.getId())

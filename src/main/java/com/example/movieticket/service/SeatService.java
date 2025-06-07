@@ -9,6 +9,6 @@ public interface SeatService {
     SeatResponse createSeat(SeatRequest request);
     SeatResponse updateSeat(Integer seatId, SeatRequest request);
     List<SeatResponse> getSeatsByScreen(Integer screenId);
-    List<SeatResponse> getAvailableSeatsByShow(Integer showId);
+    List<SeatResponse> getSeatsByShow(Integer showId);
     Void deleteSeat(Integer seatId);
 }

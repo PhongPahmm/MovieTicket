@@ -35,4 +35,7 @@ public interface ShowRepository extends JpaRepository<Show, Integer> {
     );
 
     Page<Show> findByMovieAndActiveTrue(Movie movie, Pageable pageable);
+    Page<Show> findByMovieAndShowDate(Movie movie, LocalDate showDate, Pageable pageable);
+    Page<Show> findByMovieAndShowDateAndActiveTrue(Movie movie, LocalDate showDate, Pageable pageable);
+
 }

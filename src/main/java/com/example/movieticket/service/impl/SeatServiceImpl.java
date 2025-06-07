@@ -39,6 +39,7 @@ public class SeatServiceImpl implements SeatService {
                 .number(request.getNumber())
                 .seatType(request.getSeatType())
                 .active(true)
+
                 .build();
         return mapToResponse(seatRepository.save(seat));
     }
@@ -64,20 +65,21 @@ public class SeatServiceImpl implements SeatService {
                 .toList();
     }
 
-    @Override
-    public List<SeatResponse> getAvailableSeatsByShow(Integer showId) {
+    public List<SeatResponse> getSeatsByShow(Integer showId) {
         var show = showRepository.findById(showId)
                 .orElseThrow(() -> new AppException(ErrorCode.SHOW_NOT_FOUND));
+
         var allSeats = seatRepository.findByScreenId(show.getScreen().getId());
-        var bookedSeatIds = bookingSeatRepository.findByBookingShow_Id(showId).stream()
+
+        var bookedSeatIds = bookingSeatRepository.findByBooking_Show_Id(showId).stream()
                 .map(bs -> bs.getSeat().getId())
                 .toList();
 
         return allSeats.stream()
-                .filter(seat -> !bookedSeatIds.contains(seat.getId()))
-                .map(this::mapToResponse)
+                .map(seat -> mapToResponse(seat, bookedSeatIds.contains(seat.getId())))
                 .toList();
     }
+
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
@@ -86,7 +88,7 @@ public class SeatServiceImpl implements SeatService {
         return null;
     }
 
-    private SeatResponse mapToResponse(Seat seat) {
+    private SeatResponse mapToResponse(Seat seat, boolean isBooked) {
         return SeatResponse.builder()
                 .id(seat.getId())
                 .screenId(seat.getScreen().getId())
@@ -94,6 +96,10 @@ public class SeatServiceImpl implements SeatService {
                 .number(seat.getNumber())
                 .seatType(seat.getSeatType())
                 .active(seat.isActive())
+                .booked(isBooked)
                 .build();
+    }
+    private SeatResponse mapToResponse(Seat seat) {
+        return mapToResponse(seat, false);
     }
 }

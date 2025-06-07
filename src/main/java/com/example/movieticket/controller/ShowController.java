@@ -8,7 +8,10 @@ import com.example.movieticket.service.ShowService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/shows")
@@ -64,6 +67,21 @@ public class ShowController {
                 .data(showService.getShowByMovie(movieId, page, size))
                 .build();
     }
+    @GetMapping("movie/{movieId}/by-date")
+    public ResponseData<PageResponse<ShowResponse>> getShowByDate(
+            @PathVariable Integer movieId,
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseData.<PageResponse<ShowResponse>>builder()
+                .code(200)
+                .message("Successfully retrieved shows by movie and date")
+                .data(showService.getShowByMovieAndDate(movieId, date, page, size))
+                .build();
+    }
+
+
     @PutMapping("/status/{showId}")
     public ResponseData<ShowResponse> changeShowActive(@PathVariable Integer showId, @RequestParam boolean isActive){
         return ResponseData.<ShowResponse>builder()

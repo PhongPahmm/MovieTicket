@@ -21,6 +21,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -42,7 +43,8 @@ public class BookingServiceImpl implements BookingService {
     PriceRepository priceRepository;
     VNPayService vnPayService;
     EmailService emailService;
-    private final UserService userService;
+    UserService userService;
+    BookingCleanUpService bookingCleanupService;
 
     @Transactional
     @Override
@@ -171,22 +173,10 @@ public class BookingServiceImpl implements BookingService {
         return mapToBookingResponse(booking);
     }
 
-    @Transactional
-    @Override
-    public void cancelExpiredBookings() {
-        LocalDateTime now = LocalDateTime.now();
-        List<Booking> expiredBookings = bookingRepository.findByStatusAndExpireTimeBefore(BookingStatus.PENDING, now);
-
-        for (Booking booking : expiredBookings) {
-            booking.setStatus(BookingStatus.CANCELLED);
-            if (booking.getPayment() != null) {
-                booking.getPayment().setStatus(PaymentStatus.FAILED);
-                paymentRepository.save(booking.getPayment());
-            }
-            bookingRepository.save(booking);
-        }
+    @Scheduled(fixedRate = 60000)
+    public void autoCancelExpiredBookings() {
+        bookingCleanupService.cancelExpiredBookings();
     }
-
     @Override
     public BookingResponse getBookingById(Integer bookingId) {
         Booking booking = bookingRepository.findById(bookingId)

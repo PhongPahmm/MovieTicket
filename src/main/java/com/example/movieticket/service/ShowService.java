@@ -4,6 +4,8 @@ import com.example.movieticket.dto.request.ShowRequest;
 import com.example.movieticket.dto.response.PageResponse;
 import com.example.movieticket.dto.response.ShowResponse;
 
+import java.time.LocalDate;
+
 public interface ShowService {
     ShowResponse createShow(ShowRequest request);
     ShowResponse updateShow(Integer showId, ShowRequest request);
@@ -11,4 +13,5 @@ public interface ShowService {
     PageResponse<ShowResponse> getShowByMovie(Integer movieId, int page, int size);
     PageResponse<ShowResponse> getAllShow(int page, int size);
     ShowResponse getShowById(Integer showId);
+    PageResponse<ShowResponse> getShowByMovieAndDate(Integer movieId, LocalDate date, int page, int size);
 }
