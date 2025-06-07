@@ -27,7 +27,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: phongphp03@gmail.com
-    password: izdu gqon ufde tjet
+    password:
     properties:
       mail:
         smtp:
@@ -49,3 +49,5 @@ jwt:
   secret-key:
   valid-duration: 3600 #in seconds
   refresh-duration: 36000 # in seconds
+cohere:
+  api-key:

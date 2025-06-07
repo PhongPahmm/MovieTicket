@@ -49,7 +49,7 @@ public class MovieController {
     @GetMapping("")
     public ResponseData<PageResponse<MovieResponse>> getAllMovies(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "8") int size) {
         return ResponseData.<PageResponse<MovieResponse>>builder()
                 .code(200)
                 .data(movieService.getAllMovies(page, size))
@@ -67,7 +67,7 @@ public class MovieController {
     @GetMapping("/now-showing")
     public ResponseData<PageResponse<MovieResponse>> getNowShowingMovies(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "8") int size
     ){
         return ResponseData.<PageResponse<MovieResponse>>builder()
                 .code(200)
@@ -78,7 +78,7 @@ public class MovieController {
     @GetMapping("/coming-soon")
     public ResponseData<PageResponse<MovieResponse>> getComingSoonMovies(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "8") int size
     ){
         return ResponseData.<PageResponse<MovieResponse>>builder()
                 .code(200)
@@ -89,7 +89,7 @@ public class MovieController {
     @GetMapping("/release-date")
     public ResponseData<PageResponse<MovieResponse>> getMovieByReleaseDate(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "8") int size,
             @RequestParam("release-date")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate releaseDate) {
         return ResponseData.<PageResponse<MovieResponse>>builder()
@@ -102,7 +102,7 @@ public class MovieController {
     public ResponseData<PageResponse<MovieResponse>> getMovieByGenre(
             @RequestBody List<Integer> genreIds,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "8") int size) {
         return ResponseData.<PageResponse<MovieResponse>>builder()
                 .code(200)
                 .message("Successfully retrieved movies")

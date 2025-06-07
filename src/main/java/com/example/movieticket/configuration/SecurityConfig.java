@@ -54,7 +54,8 @@ public class SecurityConfig {
             "/seat/show/{showId}",
             "/bookings/**",
             "/oauth2/**",
-            "/login/oauth2/**"
+            "/login/oauth2/**",
+            "/chat"
     };
 
     @Value("${jwt.secret-key}")
