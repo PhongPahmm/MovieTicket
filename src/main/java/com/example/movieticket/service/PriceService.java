@@ -14,5 +14,6 @@ public interface PriceService {
     Void deletePrice(Integer priceId);
     List<PriceResponse> getPricesByShow(Integer showId);
     PriceResponse getValidPrice(Integer showId, SeatType seatType, LocalDate date);
+    PriceResponse getPriceByShowAndSeat(Integer showId, Integer seatId);
     PageResponse<PriceResponse> getAllPrices(int page, int size);
 }

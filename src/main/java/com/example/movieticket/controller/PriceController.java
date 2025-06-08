@@ -75,6 +75,17 @@ public class PriceController {
                 .data(result)
                 .build();
     }
+    @GetMapping("/by-show-seat")
+    public ResponseData<PriceResponse> getPriceByShowAndSeat(
+            @RequestParam Integer showId,
+            @RequestParam Integer seatId) {
+        var result = priceService.getPriceByShowAndSeat(showId, seatId);
+        return ResponseData.<PriceResponse>builder()
+                .code(200)
+                .message("Get price by show and seat successfully")
+                .data(result)
+                .build();
+    }
 
     @GetMapping("")
     public ResponseData<PageResponse<PriceResponse>> getAllPrices(

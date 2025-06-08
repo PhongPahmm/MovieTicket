@@ -1,9 +1,6 @@
 package com.example.movieticket.service.impl;
 
-import com.example.movieticket.common.BookingStatus;
-import com.example.movieticket.common.PaymentMethod;
-import com.example.movieticket.common.PaymentStatus;
-import com.example.movieticket.common.SeatType;
+import com.example.movieticket.common.*;
 import com.example.movieticket.dto.request.BookingRequest;
 import com.example.movieticket.dto.response.BookedSeatResponse;
 import com.example.movieticket.dto.response.BookingResponse;
@@ -101,6 +98,7 @@ public class BookingServiceImpl implements BookingService {
                     .booking(booking)
                     .seat(seat)
                     .price(seatPrice)
+                    .status(SeatStatus.PENDING)
                     .build();
             bookingSeatRepository.save(bookingSeat);
         }
@@ -147,11 +145,16 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new RuntimeException("Payment not found: " + paymentId));
         Booking booking = bookingRepository.findByPayment(payment)
                 .orElseThrow(() -> new RuntimeException("Booking not found for payment: " + payment.getId()));
-
         if (paymentResult == 1) {
             // Payment successful
             payment.setStatus(PaymentStatus.SUCCESS);
             booking.setStatus(BookingStatus.CONFIRMED);
+            List<BookingSeat> bookingSeats = bookingSeatRepository.findByBooking(booking);
+            for (BookingSeat seat : bookingSeats) {
+                seat.setStatus(SeatStatus.BOOKED);
+            }
+            bookingSeatRepository.saveAll(bookingSeats);
+
             try {
                 emailService.sendBookingConfirmationEmail(booking);
             } catch (MessagingException e) {

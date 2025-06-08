@@ -1,5 +1,6 @@
 package com.example.movieticket.dto.response;
 
+import com.example.movieticket.common.SeatStatus;
 import com.example.movieticket.common.SeatType;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,5 +16,5 @@ public class SeatResponse {
     private Integer number;
     private SeatType seatType;
     private Boolean active;
-    private boolean booked;
+    private SeatStatus status;
 }

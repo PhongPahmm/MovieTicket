@@ -7,8 +7,10 @@ import com.example.movieticket.dto.response.PriceResponse;
 import com.example.movieticket.exception.AppException;
 import com.example.movieticket.exception.ErrorCode;
 import com.example.movieticket.model.Price;
+import com.example.movieticket.model.Seat;
 import com.example.movieticket.model.Show;
 import com.example.movieticket.repository.PriceRepository;
+import com.example.movieticket.repository.SeatRepository;
 import com.example.movieticket.repository.ShowRepository;
 import com.example.movieticket.service.PriceService;
 import com.example.movieticket.util.PaginationUtil;
@@ -30,6 +32,7 @@ import java.util.List;
 public class PriceServiceImpl implements PriceService {
     PriceRepository priceRepository;
     ShowRepository showRepository;
+    SeatRepository seatRepository;
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
@@ -89,6 +92,22 @@ public class PriceServiceImpl implements PriceService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Price> prices = priceRepository.findAll(pageable);
         return PaginationUtil.mapToPageResponse(prices, this::mapToPriceResponse);
+    }
+    @Override
+    public PriceResponse getPriceByShowAndSeat(Integer showId, Integer seatId) {
+        Seat seat = seatRepository.findById(seatId)
+                .orElseThrow(() -> new AppException(ErrorCode.SEAT_NOT_FOUND));
+
+        SeatType seatType = seat.getSeatType();
+
+        LocalDate today = LocalDate.now();
+
+        Price price = priceRepository
+                .findFirstByShowIdAndSeatTypeAndValidFromLessThanEqualAndValidToGreaterThanEqual(
+                        showId, seatType, today, today)
+                .orElseThrow(() -> new AppException(ErrorCode.PRICE_NOT_FOUND));
+
+        return mapToPriceResponse(price);
     }
 
     private PriceResponse mapToPriceResponse(Price price) {
