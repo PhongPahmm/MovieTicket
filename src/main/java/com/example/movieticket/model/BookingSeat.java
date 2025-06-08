@@ -1,9 +1,7 @@
 package com.example.movieticket.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.example.movieticket.common.SeatStatus;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -25,4 +23,7 @@ public class BookingSeat extends AbstractEntity<Integer> {
     Seat seat;
 
     int price;
+
+    @Enumerated(EnumType.STRING)
+    private SeatStatus status = SeatStatus.AVAILABLE;
 }

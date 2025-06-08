@@ -1,9 +1,11 @@
 package com.example.movieticket.service.impl;
 
+import com.example.movieticket.common.SeatStatus;
 import com.example.movieticket.dto.request.SeatRequest;
 import com.example.movieticket.dto.response.SeatResponse;
 import com.example.movieticket.exception.AppException;
 import com.example.movieticket.exception.ErrorCode;
+import com.example.movieticket.model.BookingSeat;
 import com.example.movieticket.model.Seat;
 import com.example.movieticket.repository.BookingSeatRepository;
 import com.example.movieticket.repository.ScreenRepository;
@@ -16,7 +18,9 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -65,20 +69,42 @@ public class SeatServiceImpl implements SeatService {
                 .toList();
     }
 
+    @Override
     public List<SeatResponse> getSeatsByShow(Integer showId) {
         var show = showRepository.findById(showId)
                 .orElseThrow(() -> new AppException(ErrorCode.SHOW_NOT_FOUND));
 
-        var allSeats = seatRepository.findByScreenId(show.getScreen().getId());
+        List<Seat> allSeats = seatRepository.findByScreenId(show.getScreen().getId());
 
-        var bookedSeatIds = bookingSeatRepository.findByBooking_Show_Id(showId).stream()
-                .map(bs -> bs.getSeat().getId())
-                .toList();
+        List<BookingSeat> bookingSeats = bookingSeatRepository.findByBooking_Show_Id(showId);
+
+        Map<Integer, SeatStatus> seatStatusMap = new HashMap<>();
+        for (BookingSeat bs : bookingSeats) {
+            int seatId = bs.getSeat().getId();
+            SeatStatus currentStatus = seatStatusMap.get(seatId);
+            SeatStatus newStatus = bs.getStatus();
+
+            if (currentStatus == null) {
+                seatStatusMap.put(seatId, newStatus);
+            } else {
+                if (newStatus == SeatStatus.BOOKED) {
+                    seatStatusMap.put(seatId, SeatStatus.BOOKED);
+                }
+                else if (currentStatus == SeatStatus.AVAILABLE && newStatus == SeatStatus.PENDING) {
+                    seatStatusMap.put(seatId, SeatStatus.PENDING);
+                }
+            }
+        }
 
         return allSeats.stream()
-                .map(seat -> mapToResponse(seat, bookedSeatIds.contains(seat.getId())))
+                .map(seat -> {
+                    SeatStatus status = seatStatusMap.getOrDefault(seat.getId(), SeatStatus.AVAILABLE);
+                    return mapToResponse(seat, status);
+                })
                 .toList();
     }
+
+
 
 
     @Override
@@ -88,7 +114,7 @@ public class SeatServiceImpl implements SeatService {
         return null;
     }
 
-    private SeatResponse mapToResponse(Seat seat, boolean isBooked) {
+    private SeatResponse mapToResponse(Seat seat, SeatStatus status) {
         return SeatResponse.builder()
                 .id(seat.getId())
                 .screenId(seat.getScreen().getId())
@@ -96,10 +122,10 @@ public class SeatServiceImpl implements SeatService {
                 .number(seat.getNumber())
                 .seatType(seat.getSeatType())
                 .active(seat.isActive())
-                .booked(isBooked)
+                .status(status)
                 .build();
     }
     private SeatResponse mapToResponse(Seat seat) {
-        return mapToResponse(seat, false);
+        return mapToResponse(seat, SeatStatus.AVAILABLE);
     }
 }
