@@ -1,5 +1,6 @@
 package com.example.movieticket.service.impl;
 
+import com.example.movieticket.common.SeatStatus;
 import com.example.movieticket.common.UserRole;
 import com.example.movieticket.dto.request.ShowRequest;
 import com.example.movieticket.dto.response.PageResponse;
@@ -7,9 +8,8 @@ import com.example.movieticket.dto.response.ShowResponse;
 import com.example.movieticket.exception.AppException;
 import com.example.movieticket.exception.ErrorCode;
 import com.example.movieticket.model.Show;
-import com.example.movieticket.repository.MovieRepository;
-import com.example.movieticket.repository.ScreenRepository;
-import com.example.movieticket.repository.ShowRepository;
+import com.example.movieticket.model.ShowSeat;
+import com.example.movieticket.repository.*;
 import com.example.movieticket.service.ShowService;
 import com.example.movieticket.service.UserService;
 import com.example.movieticket.util.PaginationUtil;
@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,8 +33,9 @@ public class ShowServiceImpl implements ShowService {
     ShowRepository showRepository;
     MovieRepository movieRepository;
     ScreenRepository screenRepository;
-    private final UserService userService;
-
+    UserService userService;
+    SeatRepository seatRepository;
+    ShowSeatRepository showSeatRepository;
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     public ShowResponse createShow(ShowRequest request) {
@@ -73,8 +75,19 @@ public class ShowServiceImpl implements ShowService {
                 .endTime(request.getEndTime())
                 .active(true)
                 .build();
+        showRepository.save(show);
+        var seats = seatRepository.findByScreenId(screen.getId());
 
-        return makeShowResponse(showRepository.save(show));
+        List<ShowSeat> showSeats = seats.stream()
+                .map(seat -> ShowSeat.builder()
+                        .show(show)
+                        .seat(seat)
+                        .status(SeatStatus.AVAILABLE)
+                        .build())
+                .toList();
+
+        showSeatRepository.saveAll(showSeats);
+        return makeShowResponse(show);
     }
 
     @Override
