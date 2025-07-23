@@ -4,6 +4,7 @@ import com.example.movieticket.common.*;
 import com.example.movieticket.dto.request.BookingRequest;
 import com.example.movieticket.dto.response.BookedSeatResponse;
 import com.example.movieticket.dto.response.BookingResponse;
+import com.example.movieticket.dto.response.SeatUpdateMessageResponse;
 import com.example.movieticket.exception.AppException;
 import com.example.movieticket.exception.ErrorCode;
 import com.example.movieticket.model.*;
@@ -18,11 +19,13 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,6 +45,7 @@ public class BookingServiceImpl implements BookingService {
     EmailService emailService;
     UserService userService;
     BookingCleanUpService bookingCleanupService;
+    SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     @Override
@@ -85,6 +89,9 @@ public class BookingServiceImpl implements BookingService {
 
         booking = bookingRepository.save(booking);
 
+        // Collect seat IDs after saving booking seats
+        List<Integer> seatIds = new ArrayList<>();
+
         // Create booking seats with current prices
         LocalDate currentDate = LocalDate.now();
         for (Seat seat : seats) {
@@ -101,8 +108,14 @@ public class BookingServiceImpl implements BookingService {
                     .status(SeatStatus.PENDING)
                     .build();
             bookingSeatRepository.save(bookingSeat);
-        }
 
+            seatIds.add(seat.getId()); // Collect for WebSocket
+        }
+        //  Real-time seat status broadcast
+        messagingTemplate.convertAndSend(
+                "/topic/show/" + show.getId() + "/seats",
+                new SeatUpdateMessageResponse(seatIds, SeatStatus.PENDING)
+        );
         // Create payment record
         Payment payment = Payment.builder()
                 .user(user)
@@ -255,7 +268,7 @@ public class BookingServiceImpl implements BookingService {
         return switch (seatType) {
             case VIP -> 150000;
             case COUPLE -> 200000;
-            default -> 80000;
+            case STANDARD -> 100000;
         };
     }
 }

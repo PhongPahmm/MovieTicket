@@ -58,7 +58,8 @@ public class SecurityConfig {
             "/oauth2/**",
             "/login/oauth2/**",
             "/chat",
-            "/images/**"
+            "/images/**",
+            "/ws/**"
     };
 
     @Value("${jwt.secret-key}")
