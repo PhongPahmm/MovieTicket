@@ -10,7 +10,7 @@ import com.example.movieticket.exception.ErrorCode;
 import com.example.movieticket.model.User;
 import com.example.movieticket.repository.InvalidatedTokenRepository;
 import com.example.movieticket.repository.UserRepository;
-import com.example.movieticket.service.FileStorageService;
+import com.example.movieticket.service.CloudinaryService;
 import com.example.movieticket.service.UserService;
 import com.example.movieticket.util.PaginationUtil;
 import lombok.AccessLevel;
@@ -36,7 +36,7 @@ import java.nio.file.Paths;
 public class UserServiceImpl implements UserService {
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
-    FileStorageService fileStorageService;
+    CloudinaryService cloudinaryService;
     InvalidatedTokenRepository invalidatedTokenRepository;
     @Override
     public UserResponse createUser(UserCreationRequest request) {
@@ -80,7 +80,7 @@ public class UserServiceImpl implements UserService {
                     Path oldImagePath = Paths.get("uploads", imageName);
                     Files.deleteIfExists(oldImagePath);
                 }
-                imageName = fileStorageService.upload(request.getUserImage());
+                imageName = cloudinaryService.upload(request.getUserImage());
             } catch (IOException e) {
                 throw new RuntimeException("Failed to update image: " + e.getMessage());
             }

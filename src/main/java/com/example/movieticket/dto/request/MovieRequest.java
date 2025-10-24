@@ -21,7 +21,7 @@ public class MovieRequest {
     private List<String> actors;
     private String language;
     private MultipartFile posterUrl;
-    private String trailerUrl;
+    private MultipartFile  trailerUrl;
     private Boolean active;
     private MovieStatus status;
     List<Integer> genreIds;

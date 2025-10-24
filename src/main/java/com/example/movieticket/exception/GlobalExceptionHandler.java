@@ -6,8 +6,6 @@ import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.nio.file.AccessDeniedException;
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(value = Exception.class)

@@ -1,44 +1,32 @@
 package com.example.movieticket.controller;
 
 
+import com.example.movieticket.service.CloudinaryService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/images")
+@RequiredArgsConstructor
 public class ImageController {
 
-    private final Path uploadPath = Paths.get("uploads").toAbsolutePath().normalize();
+    private final CloudinaryService cloudinaryService;
 
-    @GetMapping("/{filename:.+}")
-    public ResponseEntity<Resource> getImage(@PathVariable String filename) {
-        try {
-            Path filePath = uploadPath.resolve(filename).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-            if (resource.exists()) {
-                String contentType = Files.probeContentType(filePath);
-                if (contentType == null) {
-                    contentType = "application/octet-stream";
-                }
-                return ResponseEntity.ok()
-                        .contentType(MediaType.parseMediaType(contentType))
-                        .body(resource);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (MalformedURLException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    @PostMapping
+    public ResponseEntity<Map<String, String>> upload(@RequestParam("file") MultipartFile file) {
+        String imageUrl = cloudinaryService.upload(file);
+        return ResponseEntity.ok(Map.of("url", imageUrl));
     }
 }
 

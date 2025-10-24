@@ -14,7 +14,7 @@ import com.example.movieticket.model.MovieGenre;
 import com.example.movieticket.repository.GenreRepository;
 import com.example.movieticket.repository.MovieGenreRepository;
 import com.example.movieticket.repository.MovieRepository;
-import com.example.movieticket.service.FileStorageService;
+import com.example.movieticket.service.CloudinaryService;
 import com.example.movieticket.service.MovieService;
 import com.example.movieticket.service.UserService;
 import com.example.movieticket.util.PaginationUtil;
@@ -35,7 +35,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MovieServiceImpl implements MovieService {
     MovieRepository movieRepository;
-    FileStorageService fileStorageService;
+    CloudinaryService cloudinaryService;
     MovieGenreRepository movieGenreRepository;
     GenreRepository genreRepository;
     private final UserService userService;
@@ -45,7 +45,11 @@ public class MovieServiceImpl implements MovieService {
     public MovieResponse createMovie(MovieRequest request) {
         String posterUrl = "";
         if(request.getPosterUrl() != null) {
-            posterUrl = fileStorageService.upload(request.getPosterUrl());
+            posterUrl = cloudinaryService.upload(request.getPosterUrl());
+        }
+        String trailerUrl = "";
+        if(request.getTrailerUrl() != null) {
+            trailerUrl = cloudinaryService.upload(request.getTrailerUrl());
         }
         var movie = Movie.builder()
                 .title(request.getTitle())
@@ -57,7 +61,7 @@ public class MovieServiceImpl implements MovieService {
                 .actors(request.getActors())
                 .language(request.getLanguage())
                 .posterUrl(posterUrl)
-                .trailerUrl(request.getTrailerUrl())
+                .trailerUrl(trailerUrl)
                 .status(request.getStatus())
                 .active(true)
                 .build();
@@ -85,10 +89,13 @@ public class MovieServiceImpl implements MovieService {
                 .orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
 
         if (request.getPosterUrl() != null) {
-            String posterUrl = fileStorageService.upload(request.getPosterUrl());
+            String posterUrl = cloudinaryService.upload(request.getPosterUrl());
             movie.setPosterUrl(posterUrl);
         }
-
+        if (request.getTrailerUrl() != null) {
+            String trailerUrl = cloudinaryService.upload(request.getTrailerUrl());
+            movie.setPosterUrl(trailerUrl);
+        }
         if (request.getTitle() != null) movie.setTitle(request.getTitle());
         if (request.getDescription() != null) movie.setDescription(request.getDescription());
         if (request.getDurationMinutes() != null) movie.setDurationMinutes(request.getDurationMinutes());
@@ -96,9 +103,7 @@ public class MovieServiceImpl implements MovieService {
         if (request.getAgeRating() != null) movie.setAgeRating(request.getAgeRating());
         if (request.getDirector() != null) movie.setDirector(request.getDirector());
         if (request.getActors() != null) movie.setActors(request.getActors());
-        if (request.getLanguage() != null) movie.setLanguage(request.getLanguage());
-        if (request.getTrailerUrl() != null) movie.setTrailerUrl(request.getTrailerUrl());
-        if (request.getStatus() != null) movie.setStatus(request.getStatus());
+        if (request.getLanguage() != null) movie.setLanguage(request.getLanguage());if (request.getStatus() != null) movie.setStatus(request.getStatus());
         if (request.getActive() != null) movie.setActive(request.getActive());
 
         var savedMovie = movieRepository.save(movie);
