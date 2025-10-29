@@ -10,4 +10,5 @@ public class PaymentRequest {
     private PaymentMethod paymentMethod;
     private String orderInfo;
     private Double amount;
+    private String bankCode; // Optional: NCB, VIETCOMBANK, VNPAYQR, etc.
 }

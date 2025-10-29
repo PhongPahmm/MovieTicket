@@ -14,7 +14,9 @@ import java.time.LocalTime;
 public class ShowResponse {
     Integer showId;
     Integer movieId;
+    String movieTitle;
     Integer screenId;
+    String screenName;
     LocalDate showDate;
     LocalTime startTime;
     LocalTime endTime;

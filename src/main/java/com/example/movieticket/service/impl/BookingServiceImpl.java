@@ -4,6 +4,7 @@ import com.example.movieticket.common.*;
 import com.example.movieticket.dto.request.BookingRequest;
 import com.example.movieticket.dto.response.BookedSeatResponse;
 import com.example.movieticket.dto.response.BookingResponse;
+import com.example.movieticket.dto.response.PageResponse;
 import com.example.movieticket.dto.response.SeatUpdateMessageResponse;
 import com.example.movieticket.exception.AppException;
 import com.example.movieticket.exception.ErrorCode;
@@ -19,6 +20,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -217,6 +222,66 @@ public class BookingServiceImpl implements BookingService {
     public Booking getBookingEntityById(Integer bookingId) {
         return bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
+    }
+
+    @Override
+    public PageResponse<BookingResponse> getAllBookings(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "bookingTime"));
+        Page<Booking> bookingPage = bookingRepository.findAll(pageable);
+
+        List<BookingResponse> bookingResponses = bookingPage.getContent().stream()
+                .map(this::mapToBookingResponse)
+                .toList();
+
+        return PageResponse.<BookingResponse>builder()
+                .currentPage(bookingPage.getNumber())
+                .pageSize(bookingPage.getSize())
+                .totalPages(bookingPage.getTotalPages())
+                .totalItems(bookingPage.getTotalElements())
+                .items(bookingResponses)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public BookingResponse cancelBooking(Integer bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new AppException(ErrorCode.BOOKING_ALREADY_CANCELLED);
+        }
+
+        // Set booking status to cancelled
+        booking.setStatus(BookingStatus.CANCELLED);
+        
+        // Release the seats
+        List<BookingSeat> bookingSeats = bookingSeatRepository.findByBooking(booking);
+        for (BookingSeat bookingSeat : bookingSeats) {
+            Seat seat = bookingSeat.getSeat();
+            seat.setSeatStatus(SeatStatus.AVAILABLE);
+            seatRepository.save(seat);
+        }
+
+        // Save the booking
+        bookingRepository.save(booking);
+
+        // Notify via WebSocket about seat status change
+        Show show = booking.getShow();
+        List<Integer> seatIds = bookingSeats.stream()
+                .map(bs -> bs.getSeat().getId())
+                .toList();
+        
+        SeatUpdateMessageResponse seatUpdate = SeatUpdateMessageResponse.builder()
+                .seatIds(seatIds)
+                .seatStatus(SeatStatus.AVAILABLE)
+                .build();
+
+        // Send seat updates to the show topic via WebSocket
+        messagingTemplate.convertAndSend("/topic/show/" + show.getId(), seatUpdate);
+        log.info("Sent seat update notification for show {} - {} seats released", show.getId(), seatIds.size());
+
+        return mapToBookingResponse(booking);
     }
 
     private BookingResponse mapToBookingResponse(Booking booking) {

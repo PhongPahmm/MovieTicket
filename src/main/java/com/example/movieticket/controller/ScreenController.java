@@ -27,7 +27,7 @@ public class ScreenController {
                 .build();
     }
 
-    @PutMapping("update-screen/{screenId}")
+    @PutMapping("/update-screen/{screenId}")
     public ResponseData<ScreenResponse> updateScreen(@PathVariable Integer screenId, @RequestBody ScreenRequest request) {
         return ResponseData.<ScreenResponse>builder()
                 .code(200)
@@ -61,6 +61,15 @@ public class ScreenController {
                 .code(200)
                 .message("Successfully changed screen status")
                 .data(screenService.changeScreenStatus(screenId, isActive))
+                .build();
+    }
+
+    @DeleteMapping("/{screenId}")
+    public ResponseData<Void> deleteScreen(@PathVariable Integer screenId) {
+        screenService.deleteScreen(screenId);
+        return ResponseData.<Void>builder()
+                .code(200)
+                .message("Successfully deleted screen")
                 .build();
     }
 }

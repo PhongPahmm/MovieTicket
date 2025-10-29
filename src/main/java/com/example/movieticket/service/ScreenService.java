@@ -11,4 +11,5 @@ public interface ScreenService {
     ScreenResponse getScreeById(Integer id);
     List<ScreenResponse> getAllScreens();
     ScreenResponse changeScreenStatus(Integer id, Boolean isActive);
+    void deleteScreen(Integer screenId);
 }

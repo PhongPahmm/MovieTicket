@@ -1,5 +1,6 @@
 package com.example.movieticket.model;
 
+import com.example.movieticket.common.SeatStatus;
 import com.example.movieticket.common.SeatType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,5 +23,8 @@ public class Seat extends AbstractEntity<Integer> {
 
     @Enumerated(EnumType.STRING)
     SeatType seatType;
+
+    @Enumerated(EnumType.STRING)
+    SeatStatus seatStatus;
     boolean active;
 }

@@ -2,6 +2,7 @@ package com.example.movieticket.controller;
 
 import com.example.movieticket.dto.request.BookingRequest;
 import com.example.movieticket.dto.response.BookingResponse;
+import com.example.movieticket.dto.response.PageResponse;
 import com.example.movieticket.dto.response.ResponseData;
 import com.example.movieticket.service.BookingService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -57,6 +58,28 @@ public class BookingController {
                 .code(200)
                 .message("User bookings fetched")
                 .data(responseList)
+                .build();
+    }
+
+    @GetMapping("")
+    public ResponseData<PageResponse<BookingResponse>> getAllBookings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        PageResponse<BookingResponse> response = bookingService.getAllBookings(page, size);
+        return ResponseData.<PageResponse<BookingResponse>>builder()
+                .code(200)
+                .message("All bookings fetched")
+                .data(response)
+                .build();
+    }
+
+    @PutMapping("/cancel/{bookingId}")
+    public ResponseData<BookingResponse> cancelBooking(@PathVariable Integer bookingId) {
+        BookingResponse response = bookingService.cancelBooking(bookingId);
+        return ResponseData.<BookingResponse>builder()
+                .code(200)
+                .message("Booking cancelled successfully")
+                .data(response)
                 .build();
     }
 

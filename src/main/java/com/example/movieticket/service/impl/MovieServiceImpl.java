@@ -94,7 +94,7 @@ public class MovieServiceImpl implements MovieService {
         }
         if (request.getTrailerUrl() != null) {
             String trailerUrl = cloudinaryService.upload(request.getTrailerUrl());
-            movie.setPosterUrl(trailerUrl);
+            movie.setTrailerUrl(trailerUrl);
         }
         if (request.getTitle() != null) movie.setTitle(request.getTitle());
         if (request.getDescription() != null) movie.setDescription(request.getDescription());

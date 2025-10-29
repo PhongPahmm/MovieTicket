@@ -32,4 +32,25 @@ public interface PriceRepository extends JpaRepository<Price, Integer> {
     Optional<Price> findByShowAndSeatTypeAndDateBetween(
             @Param("show") Show show,
             @Param("seatType") SeatType seatType,
-            @Param("date") LocalDate date);}
+            @Param("date") LocalDate date);
+
+    // Check if price exists with overlapping date range
+    @Query("""
+        SELECT COUNT(p) > 0 FROM Price p
+        WHERE p.show = :show
+        AND p.seatType = :seatType
+        AND (
+            (:validFrom BETWEEN p.validFrom AND p.validTo)
+            OR (:validTo BETWEEN p.validFrom AND p.validTo)
+            OR (p.validFrom BETWEEN :validFrom AND :validTo)
+        )
+        AND (:excludePriceId IS NULL OR p.id != :excludePriceId)
+    """)
+    boolean existsByShowAndSeatTypeWithOverlappingDateRange(
+            @Param("show") Show show,
+            @Param("seatType") SeatType seatType,
+            @Param("validFrom") LocalDate validFrom,
+            @Param("validTo") LocalDate validTo,
+            @Param("excludePriceId") Integer excludePriceId
+    );
+}

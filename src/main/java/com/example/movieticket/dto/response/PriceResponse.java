@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class PriceResponse {
     private Integer priceId;
     private Integer showId;
+    private String movieTitle;
     private Integer amount;
     private LocalDate validFrom;
     private LocalDate validTo;

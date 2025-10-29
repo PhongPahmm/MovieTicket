@@ -9,6 +9,7 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class SeatUpdateMessageResponse {
     private List<Integer> seatIds;
     private SeatStatus seatStatus;

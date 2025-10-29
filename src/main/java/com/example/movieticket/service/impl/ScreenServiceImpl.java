@@ -74,6 +74,14 @@ public class ScreenServiceImpl implements ScreenService {
         return mapToScreenResponse(screenRepository.save(screen));
     }
 
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deleteScreen(Integer screenId) {
+        var screen = screenRepository.findById(screenId)
+                .orElseThrow(()-> new AppException(ErrorCode.SCREEN_NOT_FOUND));
+        screenRepository.delete(screen);
+    }
+
     private ScreenResponse mapToScreenResponse(Screen screen) {
         return ScreenResponse.builder()
                 .id(screen.getId())

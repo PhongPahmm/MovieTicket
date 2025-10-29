@@ -48,11 +48,23 @@ public class ShowServiceImpl implements ShowService {
             throw new AppException(ErrorCode.INVALID_SHOW_DATE);
         }
 
-        if (request.getStartTime().isAfter(request.getEndTime()) || request.getStartTime().equals(request.getEndTime())) {
+        // Validate that start time and end time are not equal
+        if (request.getStartTime().equals(request.getEndTime())) {
             throw new AppException(ErrorCode.INVALID_SHOW_TIME);
         }
 
-        long duration = Duration.between(request.getStartTime(), request.getEndTime()).toMinutes();
+        // Calculate duration (handle overnight shows when endTime < startTime)
+        long duration;
+        if (request.getEndTime().isBefore(request.getStartTime())) {
+            // Overnight show: calculate as (midnight - start) + end
+            long minutesUntilMidnight = Duration.between(request.getStartTime(), java.time.LocalTime.MAX).toMinutes() + 1;
+            long minutesAfterMidnight = Duration.between(java.time.LocalTime.MIN, request.getEndTime()).toMinutes();
+            duration = minutesUntilMidnight + minutesAfterMidnight;
+        } else {
+            // Same day show
+            duration = Duration.between(request.getStartTime(), request.getEndTime()).toMinutes();
+        }
+
         if (duration < movie.getDurationMinutes()) {
             throw new AppException(ErrorCode.INVALID_DURATION);
         }
@@ -173,7 +185,9 @@ public class ShowServiceImpl implements ShowService {
         return ShowResponse.builder()
                 .showId(show.getId())
                 .movieId(show.getMovie().getId())
+                .movieTitle(show.getMovie().getTitle())
                 .screenId(show.getScreen().getId())
+                .screenName(show.getScreen().getName())
                 .showDate(show.getShowDate())
                 .startTime(show.getStartTime())
                 .endTime(show.getEndTime())

@@ -37,8 +37,37 @@ public class PriceServiceImpl implements PriceService {
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     public PriceResponse createPrice(PriceRequest priceRequest) {
+        // Validate show exists
         Show show = showRepository.findById(priceRequest.getShowId())
                 .orElseThrow(() -> new AppException(ErrorCode.SHOW_NOT_FOUND));
+
+        // Validate amount
+        if (priceRequest.getAmount() == null || priceRequest.getAmount() <= 0) {
+            throw new AppException(ErrorCode.INVALID_PRICE_AMOUNT);
+        }
+
+        // Validate date range
+        if (priceRequest.getValidFrom() == null || priceRequest.getValidTo() == null) {
+            throw new AppException(ErrorCode.INVALID_PRICE_DATE_RANGE);
+        }
+
+        if (priceRequest.getValidFrom().isAfter(priceRequest.getValidTo())) {
+            throw new AppException(ErrorCode.INVALID_PRICE_DATE_RANGE);
+        }
+
+        // Check for overlapping price entries
+        boolean hasOverlap = priceRepository.existsByShowAndSeatTypeWithOverlappingDateRange(
+                show,
+                priceRequest.getSeatType(),
+                priceRequest.getValidFrom(),
+                priceRequest.getValidTo(),
+                null // excludePriceId is null for create
+        );
+
+        if (hasOverlap) {
+            throw new AppException(ErrorCode.PRICE_ALREADY_EXISTS);
+        }
+
         Price price = Price.builder()
                 .show(show)
                 .amount(priceRequest.getAmount())
@@ -54,10 +83,36 @@ public class PriceServiceImpl implements PriceService {
     public PriceResponse updatePrice(Integer priceId, PriceRequest request) {
         Price price = priceRepository.findById(priceId)
                 .orElseThrow(() -> new AppException(ErrorCode.PRICE_NOT_FOUND));
+
+        // Validate amount if provided
+        if (request.getAmount() != null && request.getAmount() <= 0) {
+            throw new AppException(ErrorCode.INVALID_PRICE_AMOUNT);
+        }
+
+        // Update fields
         if (request.getAmount() != null) price.setAmount(request.getAmount());
         if (request.getSeatType() != null) price.setSeatType(request.getSeatType());
         if (request.getValidFrom() != null) price.setValidFrom(request.getValidFrom());
         if (request.getValidTo() != null) price.setValidTo(request.getValidTo());
+
+        // Validate date range after updates
+        if (price.getValidFrom().isAfter(price.getValidTo())) {
+            throw new AppException(ErrorCode.INVALID_PRICE_DATE_RANGE);
+        }
+
+        // Check for overlapping price entries (excluding current price)
+        boolean hasOverlap = priceRepository.existsByShowAndSeatTypeWithOverlappingDateRange(
+                price.getShow(),
+                price.getSeatType(),
+                price.getValidFrom(),
+                price.getValidTo(),
+                priceId // exclude current price from check
+        );
+
+        if (hasOverlap) {
+            throw new AppException(ErrorCode.PRICE_ALREADY_EXISTS);
+        }
+
         return mapToPriceResponse(priceRepository.save(price));
     }
 
@@ -114,6 +169,7 @@ public class PriceServiceImpl implements PriceService {
         return PriceResponse.builder()
                 .priceId(price.getId())
                 .showId(price.getShow().getId())
+                .movieTitle(price.getShow().getMovie().getTitle())
                 .seatType(price.getSeatType())
                 .amount(price.getAmount())
                 .validFrom(price.getValidFrom())
