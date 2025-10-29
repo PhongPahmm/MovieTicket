@@ -69,14 +69,17 @@ public class BookingServiceImpl implements BookingService {
             throw new AppException(ErrorCode.SEAT_NOT_FOUND);
         }
 
-        // Check if seats are already booked for this show
-        List<BookingSeat> bookedSeats = bookingSeatRepository.findByBooking_Show_IdAndSeat_IdIn(
-                request.getShowId(), request.getSeats());
+        // Check if seats are already booked for this show (excluding cancelled bookings)
+        List<BookingStatus> activeStatuses = List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED);
+        List<BookingSeat> bookedSeats = bookingSeatRepository.findByShowAndSeatsWithBookingStatus(
+                request.getShowId(), request.getSeats(), activeStatuses);
+        
         if (!bookedSeats.isEmpty()) {
             List<Integer> bookedSeatIds = bookedSeats.stream()
                     .map(bs -> bs.getSeat().getId())
                     .toList();
-            throw new RuntimeException("Seats already booked: " + bookedSeatIds);
+            log.warn("Seats already booked: {} for show {}", bookedSeatIds, request.getShowId());
+            throw new AppException(ErrorCode.SEAT_ALREADY_BOOKED);
         }
 
         // Calculate total amount using Price table

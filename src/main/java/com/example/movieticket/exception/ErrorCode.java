@@ -34,6 +34,7 @@ public enum ErrorCode {
     INVALID_PRICE_AMOUNT(1026, "Price amount must be greater than 0", HttpStatus.BAD_REQUEST),
     INVALID_PRICE_DATE_RANGE(1027, "Valid from date must be before or equal to valid to date", HttpStatus.BAD_REQUEST),
     PRICE_ALREADY_EXISTS(1028, "Price already exists for this show, seat type and date range", HttpStatus.CONFLICT),
+    SEAT_ALREADY_BOOKED(1028, "Seats already booked", HttpStatus.BAD_REQUEST),
     ;
     private final int errorCode;
     private final String errorMessage;

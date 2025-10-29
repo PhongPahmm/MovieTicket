@@ -31,22 +31,13 @@ public class BookingController {
                 .build();
     }
 
+    // Specific paths should come before generic path variables to avoid conflicts
     @GetMapping("/payment-return/vnpay-payment")
     public ResponseData<BookingResponse> handlePaymentReturn(HttpServletRequest request) {
         BookingResponse response = bookingService.handlePaymentReturn(request);
         return ResponseData.<BookingResponse>builder()
                 .code(200)
                 .message("Payment processed")
-                .data(response)
-                .build();
-    }
-
-    @GetMapping("/{bookingId}")
-    public ResponseData<BookingResponse> getBookingById(@PathVariable Integer bookingId) {
-        BookingResponse response = bookingService.getBookingById(bookingId);
-        return ResponseData.<BookingResponse>builder()
-                .code(200)
-                .message("Booking fetched")
                 .data(response)
                 .build();
     }
@@ -69,6 +60,16 @@ public class BookingController {
         return ResponseData.<PageResponse<BookingResponse>>builder()
                 .code(200)
                 .message("All bookings fetched")
+                .data(response)
+                .build();
+    }
+
+    @GetMapping("/{bookingId}")
+    public ResponseData<BookingResponse> getBookingById(@PathVariable Integer bookingId) {
+        BookingResponse response = bookingService.getBookingById(bookingId);
+        return ResponseData.<BookingResponse>builder()
+                .code(200)
+                .message("Booking fetched")
                 .data(response)
                 .build();
     }

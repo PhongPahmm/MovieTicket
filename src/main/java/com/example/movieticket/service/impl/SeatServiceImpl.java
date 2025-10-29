@@ -1,5 +1,6 @@
 package com.example.movieticket.service.impl;
 
+import com.example.movieticket.common.BookingStatus;
 import com.example.movieticket.common.SeatStatus;
 import com.example.movieticket.dto.request.SeatRequest;
 import com.example.movieticket.dto.response.SeatResponse;
@@ -76,7 +77,10 @@ public class SeatServiceImpl implements SeatService {
 
         List<Seat> allSeats = seatRepository.findByScreenId(show.getScreen().getId());
 
-        List<BookingSeat> bookingSeats = bookingSeatRepository.findByBooking_Show_Id(showId);
+        // Only get booking seats from active bookings (PENDING or CONFIRMED), exclude CANCELLED
+        List<BookingStatus> activeStatuses = List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED);
+        List<BookingSeat> bookingSeats = bookingSeatRepository.findByShowWithBookingStatus(
+                showId, activeStatuses);
 
         Map<Integer, SeatStatus> seatStatusMap = new HashMap<>();
         for (BookingSeat bs : bookingSeats) {
