@@ -28,6 +28,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -63,8 +64,11 @@ public class MovieServiceImpl implements MovieService {
                 .posterUrl(posterUrl)
                 .trailerUrl(trailerUrl)
                 .status(request.getStatus())
-                .active(true)
+                .active(request.getActive() == null ? Boolean.TRUE : request.getActive())
                 .build();
+
+        autoUpdateStatus(movie);
+
         var savedMovie = movieRepository.save(movie);
         if(request.getGenreIds() != null) {
             List<MovieGenre> movieGenres = request.getGenreIds()
@@ -103,8 +107,13 @@ public class MovieServiceImpl implements MovieService {
         if (request.getAgeRating() != null) movie.setAgeRating(request.getAgeRating());
         if (request.getDirector() != null) movie.setDirector(request.getDirector());
         if (request.getActors() != null) movie.setActors(request.getActors());
-        if (request.getLanguage() != null) movie.setLanguage(request.getLanguage());if (request.getStatus() != null) movie.setStatus(request.getStatus());
+        if (request.getLanguage() != null) movie.setLanguage(request.getLanguage());
+        if (request.getStatus() != null) {
+            movie.setStatus(request.getStatus());
+        }
         if (request.getActive() != null) movie.setActive(request.getActive());
+
+        autoUpdateStatus(movie);
 
         var savedMovie = movieRepository.save(movie);
         return mapToMovieResponse(savedMovie);
@@ -112,6 +121,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public PageResponse<MovieResponse> getAllMovies(int page, int size) {
+        refreshMovieStatuses();
         Pageable pageable = PageRequest.of(page, size);
         var user = userService.getCurrentUser();
         Page<Movie> movies;
@@ -126,6 +136,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public MovieResponse getMovieById(int movieId) {
+        refreshMovieStatuses();
         var movie = movieRepository.findById(movieId)
                 .orElseThrow(()-> new AppException(ErrorCode.MOVIE_NOT_FOUND));
         return mapToMovieResponse(movie);
@@ -142,6 +153,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public PageResponse<MovieResponse> getAllNowShowingMovies(int page, int size) {
+        refreshMovieStatuses();
         Pageable pageable = PageRequest.of(page, size);
         var user = userService.getCurrentUser();
         Page<Movie> movies;
@@ -155,6 +167,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public PageResponse<MovieResponse> getAllComingSoonMovies(int page, int size) {
+        refreshMovieStatuses();
         Pageable pageable = PageRequest.of(page, size);
         var user = userService.getCurrentUser();
         Page<Movie> movies;
@@ -169,6 +182,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public PageResponse<MovieResponse> getMovieByReleaseDate(LocalDate releaseDate, int page, int size) {
+        refreshMovieStatuses();
         Pageable pageable = PageRequest.of(page, size);
         var user = userService.getCurrentUser();
         Page<Movie> movies;
@@ -182,6 +196,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public PageResponse<MovieResponse> getMovieByGenre(List<Integer> genreId, int page, int size) {
+        refreshMovieStatuses();
         Pageable pageable = PageRequest.of(page, size);
         var user = userService.getCurrentUser();
         Page<Movie> movies;
@@ -222,5 +237,54 @@ public class MovieServiceImpl implements MovieService {
                 .updatedAt(movie.getUpdatedAt())
                 .active(movie.getActive())
                 .build();
+    }
+
+    private void autoUpdateStatus(Movie movie) {
+        LocalDate releaseDate = movie.getReleaseDate();
+        if (releaseDate == null) {
+            if (movie.getStatus() == null) {
+                movie.setStatus(MovieStatus.COMING_SOON);
+            }
+            return;
+        }
+
+        LocalDate today = LocalDate.now();
+        if (!releaseDate.isAfter(today)) {
+            if (movie.getStatus() != MovieStatus.NOW_SHOWING) {
+                movie.setStatus(MovieStatus.NOW_SHOWING);
+            }
+        } else {
+            if (movie.getStatus() != MovieStatus.COMING_SOON) {
+                movie.setStatus(MovieStatus.COMING_SOON);
+            }
+        }
+    }
+
+    private void refreshMovieStatuses() {
+        LocalDate today = LocalDate.now();
+        List<Movie> moviesToUpdate = new ArrayList<>();
+
+        List<Movie> movies = movieRepository.findAll();
+        for (Movie movie : movies) {
+            LocalDate releaseDate = movie.getReleaseDate();
+            if (releaseDate == null) {
+                if (movie.getStatus() == null) {
+                    movie.setStatus(MovieStatus.COMING_SOON);
+                    moviesToUpdate.add(movie);
+                }
+                continue;
+            }
+
+            boolean shouldBeNowShowing = !releaseDate.isAfter(today);
+            MovieStatus desiredStatus = shouldBeNowShowing ? MovieStatus.NOW_SHOWING : MovieStatus.COMING_SOON;
+            if (movie.getStatus() != desiredStatus) {
+                movie.setStatus(desiredStatus);
+                moviesToUpdate.add(movie);
+            }
+        }
+
+        if (!moviesToUpdate.isEmpty()) {
+            movieRepository.saveAll(moviesToUpdate);
+        }
     }
 }

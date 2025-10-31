@@ -2,8 +2,10 @@ package com.example.movieticket.controller;
 
 import com.example.movieticket.common.SeatType;
 import com.example.movieticket.dto.request.PriceRequest;
+import com.example.movieticket.dto.request.ScreenPriceRequest;
 import com.example.movieticket.dto.response.PageResponse;
 import com.example.movieticket.dto.response.PriceResponse;
+import com.example.movieticket.dto.response.ScreenPriceResponse;
 import com.example.movieticket.dto.response.ResponseData;
 import com.example.movieticket.service.PriceService;
 import lombok.AccessLevel;
@@ -96,6 +98,39 @@ public class PriceController {
         return ResponseData.<PageResponse<PriceResponse>>builder()
                 .code(200)
                 .message("Get all prices successfully")
+                .data(result)
+                .build();
+    }
+
+    @GetMapping("/by-screen-seat")
+    public ResponseData<Integer> getAmountByScreenAndSeat(
+            @RequestParam Integer screenId,
+            @RequestParam SeatType seatType
+    ) {
+        Integer amount = priceService.getAmountByScreenAndSeat(screenId, seatType);
+        return ResponseData.<Integer>builder()
+                .code(200)
+                .message("Get amount by screen and seat successfully")
+                .data(amount)
+                .build();
+    }
+
+    @PostMapping("/screen")
+    public ResponseData<ScreenPriceResponse> createOrUpdateScreenPrice(@RequestBody ScreenPriceRequest request) {
+        var result = priceService.createOrUpdateScreenPrice(request);
+        return ResponseData.<ScreenPriceResponse>builder()
+                .code(200)
+                .message("Create/Update screen price successfully")
+                .data(result)
+                .build();
+    }
+
+    @GetMapping("/screen")
+    public ResponseData<java.util.List<ScreenPriceResponse>> getScreenPrices(@RequestParam Integer screenId) {
+        var result = priceService.getScreenPricesByScreen(screenId);
+        return ResponseData.<java.util.List<ScreenPriceResponse>>builder()
+                .code(200)
+                .message("Get screen prices successfully")
                 .data(result)
                 .build();
     }

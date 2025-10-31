@@ -108,9 +108,6 @@ public class SeatServiceImpl implements SeatService {
                 .toList();
     }
 
-
-
-
     @Override
     @PreAuthorize("hasRole('ADMIN')")
     public Void deleteSeat(Integer seatId) {

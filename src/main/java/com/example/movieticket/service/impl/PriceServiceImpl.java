@@ -4,12 +4,16 @@ import com.example.movieticket.common.SeatType;
 import com.example.movieticket.dto.request.PriceRequest;
 import com.example.movieticket.dto.response.PageResponse;
 import com.example.movieticket.dto.response.PriceResponse;
+import com.example.movieticket.dto.response.ScreenPriceResponse;
 import com.example.movieticket.exception.AppException;
 import com.example.movieticket.exception.ErrorCode;
 import com.example.movieticket.model.Price;
 import com.example.movieticket.model.Seat;
+import com.example.movieticket.model.ScreenPrice;
 import com.example.movieticket.model.Show;
 import com.example.movieticket.repository.PriceRepository;
+import com.example.movieticket.repository.ScreenPriceRepository;
+import com.example.movieticket.repository.ScreenRepository;
 import com.example.movieticket.repository.SeatRepository;
 import com.example.movieticket.repository.ShowRepository;
 import com.example.movieticket.service.PriceService;
@@ -33,6 +37,8 @@ public class PriceServiceImpl implements PriceService {
     PriceRepository priceRepository;
     ShowRepository showRepository;
     SeatRepository seatRepository;
+    ScreenPriceRepository screenPriceRepository;
+    ScreenRepository screenRepository;
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
@@ -135,11 +141,29 @@ public class PriceServiceImpl implements PriceService {
 
     @Override
     public PriceResponse getValidPrice(Integer showId, SeatType seatType, LocalDate date) {
-        Price price = priceRepository
+        // Try show-specific price first
+        var priceOpt = priceRepository
                 .findFirstByShowIdAndSeatTypeAndValidFromLessThanEqualAndValidToGreaterThanEqual(
-                        showId, seatType, date, date)
-                .orElseThrow(() -> new AppException(ErrorCode.PRICE_NOT_FOUND));
-        return mapToPriceResponse(price);
+                        showId, seatType, date, date);
+        if (priceOpt.isPresent()) {
+            return mapToPriceResponse(priceOpt.get());
+        }
+        // Fallback to screen default price
+        Show show = showRepository.findById(showId)
+                .orElseThrow(() -> new AppException(ErrorCode.SHOW_NOT_FOUND));
+        Integer amount = getAmountByScreenAndSeat(show.getScreen().getId(), seatType);
+        if (amount == null || amount <= 0) {
+            throw new AppException(ErrorCode.PRICE_NOT_FOUND);
+        }
+        return PriceResponse.builder()
+                .priceId(null)
+                .showId(showId)
+                .movieTitle(show.getMovie().getTitle())
+                .seatType(seatType)
+                .amount(amount)
+                .validFrom(date)
+                .validTo(date)
+                .build();
     }
 
     @Override
@@ -157,12 +181,72 @@ public class PriceServiceImpl implements PriceService {
 
         LocalDate today = LocalDate.now();
 
-        Price price = priceRepository
+        var priceOpt = priceRepository
                 .findFirstByShowIdAndSeatTypeAndValidFromLessThanEqualAndValidToGreaterThanEqual(
-                        showId, seatType, today, today)
-                .orElseThrow(() -> new AppException(ErrorCode.PRICE_NOT_FOUND));
+                        showId, seatType, today, today);
+        if (priceOpt.isPresent()) {
+            return mapToPriceResponse(priceOpt.get());
+        }
+        Show show = showRepository.findById(showId)
+                .orElseThrow(() -> new AppException(ErrorCode.SHOW_NOT_FOUND));
+        Integer amount = getAmountByScreenAndSeat(show.getScreen().getId(), seatType);
+        if (amount == null || amount <= 0) {
+            throw new AppException(ErrorCode.PRICE_NOT_FOUND);
+        }
+        return PriceResponse.builder()
+                .priceId(null)
+                .showId(showId)
+                .movieTitle(show.getMovie().getTitle())
+                .seatType(seatType)
+                .amount(amount)
+                .validFrom(today)
+                .validTo(today)
+                .build();
+    }
 
-        return mapToPriceResponse(price);
+    @Override
+    public Integer getAmountByScreenAndSeat(Integer screenId, SeatType seatType) {
+        return screenPriceRepository
+                .findByScreen_IdAndSeatType(screenId, seatType)
+                .map(sp -> sp.getAmount())
+                .orElse(0);
+    }
+
+    @Override
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public ScreenPriceResponse createOrUpdateScreenPrice(com.example.movieticket.dto.request.ScreenPriceRequest request) {
+        if (request.getAmount() == null || request.getAmount() <= 0) {
+            throw new AppException(ErrorCode.INVALID_PRICE_AMOUNT);
+        }
+        var screen = screenRepository.findById(request.getScreenId())
+                .orElseThrow(() -> new AppException(ErrorCode.SCREEN_NOT_FOUND));
+
+        var existing = screenPriceRepository.findByScreen_IdAndSeatType(request.getScreenId(), request.getSeatType());
+        ScreenPrice entity = existing.orElseGet(() -> ScreenPrice.builder()
+                .screen(screen)
+                .seatType(request.getSeatType())
+                .build());
+        entity.setAmount(request.getAmount());
+        var saved = screenPriceRepository.save(entity);
+        return ScreenPriceResponse.builder()
+                .id(saved.getId())
+                .screenId(saved.getScreen().getId())
+                .seatType(saved.getSeatType())
+                .amount(saved.getAmount())
+                .build();
+    }
+
+    @Override
+    public java.util.List<ScreenPriceResponse> getScreenPricesByScreen(Integer screenId) {
+        return screenPriceRepository.findAll().stream()
+                .filter(sp -> sp.getScreen().getId().equals(screenId))
+                .map(sp -> ScreenPriceResponse.builder()
+                        .id(sp.getId())
+                        .screenId(sp.getScreen().getId())
+                        .seatType(sp.getSeatType())
+                        .amount(sp.getAmount())
+                        .build())
+                .toList();
     }
 
     private PriceResponse mapToPriceResponse(Price price) {
