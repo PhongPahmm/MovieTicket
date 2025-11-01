@@ -37,6 +37,7 @@ public class JwtUtil {
                 .expirationTime(new Date(Instant.now()
                         .plus(durationSeconds, ChronoUnit.SECONDS).toEpochMilli()))
                 .jwtID(UUID.randomUUID().toString())
+                .claim("userId", user.getId())
                 .claim("type", tokenType)
                 .claim("roles", buildRole(user))
                 .build();

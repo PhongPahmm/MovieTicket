@@ -4,6 +4,8 @@ import com.example.movieticket.common.BookingStatus;
 import com.example.movieticket.model.Booking;
 import com.example.movieticket.model.Payment;
 import com.example.movieticket.model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
@@ -16,4 +18,6 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     Optional<Booking> findByPayment(Payment payment);
 
     List<Booking> findByUserOrderByBookingTimeDesc(User user);
+    
+    Page<Booking> findByUser(User user, Pageable pageable);
 }

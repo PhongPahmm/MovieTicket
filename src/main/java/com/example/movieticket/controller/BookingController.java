@@ -9,6 +9,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,8 +24,8 @@ public class BookingController {
     BookingService bookingService;
 
     @PostMapping("/book")
-    public ResponseData<BookingResponse> createBooking(@RequestBody BookingRequest request) {
-        BookingResponse response = bookingService.createBooking(request);
+    public ResponseData<BookingResponse> createBooking(@RequestBody BookingRequest request, HttpServletRequest httpRequest) {
+        BookingResponse response = bookingService.createBooking(request, httpRequest);
         return ResponseData.<BookingResponse>builder()
                 .code(200)
                 .message("Booking created successfully")
@@ -31,13 +33,27 @@ public class BookingController {
                 .build();
     }
 
-    // Specific paths should come before generic path variables to avoid conflicts
+    // IMPORTANT: Specific paths MUST come BEFORE generic path variables like /{bookingId}
     @GetMapping("/payment-return/vnpay-payment")
     public ResponseData<BookingResponse> handlePaymentReturn(HttpServletRequest request) {
         BookingResponse response = bookingService.handlePaymentReturn(request);
         return ResponseData.<BookingResponse>builder()
                 .code(200)
                 .message("Payment processed")
+                .data(response)
+                .build();
+    }
+
+    // Get current user's bookings (userId from query param)
+    @GetMapping("/user")
+    public ResponseData<PageResponse<BookingResponse>> getCurrentUserBookings(
+            @RequestParam Integer userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        PageResponse<BookingResponse> response = bookingService.getCurrentUserBookings(userId, page, size);
+        return ResponseData.<PageResponse<BookingResponse>>builder()
+                .code(200)
+                .message("User bookings fetched")
                 .data(response)
                 .build();
     }

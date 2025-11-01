@@ -54,7 +54,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Transactional
     @Override
-    public BookingResponse createBooking(BookingRequest request) {
+    public BookingResponse createBooking(BookingRequest request, HttpServletRequest httpRequest) {
         var currentUser = userService.getCurrentUser();
 
         User user = userRepository.findById(currentUser.getId())
@@ -140,11 +140,15 @@ public class BookingServiceImpl implements BookingService {
         booking.setPayment(payment);
         booking = bookingRepository.save(booking);
 
-        // Generate VNPay payment URL
+        // Get client IP address
+        String clientIp = getClientIp(httpRequest);
+        
+        // Generate VNPay payment URL with client IP
         String paymentUrl = vnPayService.createOrder(
                 (int) Math.round(totalAmount),
                 String.valueOf(payment.getId()),
-                request.getReturnUrl()
+                request.getReturnUrl(),
+                clientIp
         );
         BookingResponse response = mapToBookingResponse(booking);
 
@@ -158,14 +162,38 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     @Override
     public BookingResponse handlePaymentReturn(HttpServletRequest request) {
+        log.info("Processing VNPay payment return callback");
+        
+        // Validate and get payment ID
+        String paymentIdStr = request.getParameter("vnp_OrderInfo");
+        if (paymentIdStr == null || paymentIdStr.isEmpty()) {
+            log.error("Missing vnp_OrderInfo parameter in VNPay callback");
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+        
+        Integer paymentId;
+        try {
+            paymentId = Integer.valueOf(paymentIdStr);
+        } catch (NumberFormatException e) {
+            log.error("Invalid payment ID format: {}", paymentIdStr);
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+        
+        // Verify payment signature and process result
         int paymentResult = vnPayService.orderReturn(request);
+        log.info("VNPay payment verification result: {} for payment ID: {}", paymentResult, paymentId);
 
-        var paymentId = request.getParameter("vnp_OrderInfo");
-
-        Payment payment = paymentRepository.findById(Integer.valueOf(paymentId))
-                .orElseThrow(() -> new RuntimeException("Payment not found: " + paymentId));
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> {
+                    log.error("Payment not found: {}", paymentId);
+                    return new AppException(ErrorCode.PAYMENT_NOT_FOUND);
+                });
+        
         Booking booking = bookingRepository.findByPayment(payment)
-                .orElseThrow(() -> new RuntimeException("Booking not found for payment: " + payment.getId()));
+                .orElseThrow(() -> {
+                    log.error("Booking not found for payment: {}", payment.getId());
+                    return new AppException(ErrorCode.BOOKING_NOT_FOUND);
+                });
         if (paymentResult == 1) {
             // Payment successful
             payment.setStatus(PaymentStatus.SUCCESS);
@@ -207,6 +235,27 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
         return mapToBookingResponse(booking);
+    }
+
+    @Override
+    public PageResponse<BookingResponse> getCurrentUserBookings(Integer userId, int page, int size) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("bookingTime").descending());
+        Page<Booking> bookingPage = bookingRepository.findByUser(user, pageable);
+
+        List<BookingResponse> responseList = bookingPage.getContent().stream()
+                .map(this::mapToBookingResponse)
+                .toList();
+
+        return PageResponse.<BookingResponse>builder()
+                .currentPage(bookingPage.getNumber())
+                .pageSize(bookingPage.getSize())
+                .totalPages(bookingPage.getTotalPages())
+                .totalItems(bookingPage.getTotalElements())
+                .items(responseList)
+                .build();
     }
 
     @Override
@@ -338,5 +387,35 @@ public class BookingServiceImpl implements BookingService {
             case COUPLE -> 200000;
             case STANDARD -> 100000;
         };
+    }
+
+    /**
+     * Get client IP address from HTTP request, handling proxy and load balancer headers
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        
+        // X-Forwarded-For can contain multiple IPs, take the first one
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        
+        return ip;
     }
 }
