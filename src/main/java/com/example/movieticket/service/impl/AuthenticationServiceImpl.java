@@ -34,6 +34,8 @@ import java.text.ParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Date;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 @RequiredArgsConstructor
 @Service
@@ -47,10 +49,35 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Value("${jwt.secret-key}")
     protected String SECRET_KEY;
 
-
     @NonFinal
     @Value("${jwt.refresh-duration}")
     protected long REFRESH_DURATION;
+
+    @NonFinal
+    @Value("${frontend.base-url}")
+    protected String frontendBaseUrl;
+
+    /**
+     * Extracts domain from frontend URL for cookie setting
+     */
+    private String getCookieDomain() {
+        try {
+            URI uri = new URI(frontendBaseUrl);
+            String host = uri.getHost();
+            // Remove www. prefix if present for cookie domain
+            if (host != null && host.startsWith("www.")) {
+                host = host.substring(4);
+            }
+            // For localhost, return "localhost"
+            if (host != null && host.equals("localhost")) {
+                return "localhost";
+            }
+            return host;
+        } catch (URISyntaxException e) {
+            System.err.println("Error parsing frontend URL: " + e.getMessage());
+            return "localhost"; // fallback
+        }
+    }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) {
         var user = userRepository.findByUsername(request.getUsername())
@@ -64,14 +91,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         var accessToken = jwtUtil.generateAccessToken(user);
         var refreshToken = jwtUtil.generateRefreshToken(user);
 
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
                 .path("/")
-                .domain("localhost")
-                .maxAge(REFRESH_DURATION)
-                .sameSite("Strict")
-                .build();
-
+                .maxAge(REFRESH_DURATION);
+        
+        // Add domain only if not null
+        String cookieDomain = getCookieDomain();
+        if (cookieDomain != null) {
+            cookieBuilder.domain(cookieDomain);
+        }
+        
+        // Determine if we're in production (HTTPS)
+        boolean isProduction = frontendBaseUrl.startsWith("https://");
+        if (isProduction) {
+            cookieBuilder.secure(true);
+            cookieBuilder.sameSite("None");
+        } else {
+            // Localhost development
+            cookieBuilder.sameSite("Strict");
+        }
+        
+        ResponseCookie cookie = cookieBuilder.build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return AuthenticationResponse.builder()
@@ -131,15 +172,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         String newAccessToken = jwtUtil.generateAccessToken(user);
         String newRefreshToken = jwtUtil.generateRefreshToken(user);
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", newRefreshToken)
+        ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("refreshToken", newRefreshToken)
                 .httpOnly(true)
-//                .secure(true)
                 .path("/")
-                .domain("localhost")
-                .maxAge(REFRESH_DURATION)
-                .sameSite("Strict")
-                .build();
-
+                .maxAge(REFRESH_DURATION);
+        
+        // Add domain only if not null
+        String cookieDomain = getCookieDomain();
+        if (cookieDomain != null) {
+            cookieBuilder.domain(cookieDomain);
+        }
+        
+        // Determine if we're in production (HTTPS)
+        boolean isProduction = frontendBaseUrl.startsWith("https://");
+        if (isProduction) {
+            cookieBuilder.secure(true);
+            cookieBuilder.sameSite("None");
+        } else {
+            // Localhost development
+            cookieBuilder.sameSite("Strict");
+        }
+        
+        ResponseCookie cookie = cookieBuilder.build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return RefreshResponse.builder()
                 .newAccessToken(newAccessToken)
