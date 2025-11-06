@@ -12,6 +12,7 @@ public interface BookingService {
     BookingResponse createBooking(BookingRequest request, HttpServletRequest httpRequest);
     BookingResponse handlePaymentReturn(HttpServletRequest request);
     BookingResponse getBookingById(Integer bookingId);
+    BookingResponse getBookingByIdWithPaymentUrl(Integer bookingId, HttpServletRequest httpRequest);
     PageResponse<BookingResponse> getCurrentUserBookings(Integer userId, int page, int size);
     List<BookingResponse> getUserBookings(Integer userId);
     Booking getBookingEntityById(Integer bookingId);

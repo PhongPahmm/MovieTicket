@@ -12,6 +12,8 @@ import com.example.movieticket.model.*;
 import com.example.movieticket.repository.*;
 import com.example.movieticket.service.BookingService;
 import com.example.movieticket.service.EmailService;
+import com.example.movieticket.service.PriceService;
+import com.example.movieticket.service.QRCodeService;
 import com.example.movieticket.service.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,8 +48,10 @@ public class BookingServiceImpl implements BookingService {
     ShowRepository showRepository;
     SeatRepository seatRepository;
     PriceRepository priceRepository;
+    PriceService priceService;
     VNPayService vnPayService;
     EmailService emailService;
+    QRCodeService qrCodeService;
     UserService userService;
     BookingCleanUpService bookingCleanupService;
     SimpMessagingTemplate messagingTemplate;
@@ -103,11 +107,7 @@ public class BookingServiceImpl implements BookingService {
         // Create booking seats with current prices
         LocalDate currentDate = LocalDate.now();
         for (Seat seat : seats) {
-            Optional<Price> priceOpt = priceRepository.findByShowAndSeatTypeAndDateBetween(
-                    show, seat.getSeatType(), currentDate);
-
-            int seatPrice = priceOpt.map(Price::getAmount)
-                    .orElse(getDefaultPrice(seat.getSeatType()));
+            int seatPrice = getSeatPrice(show, seat.getSeatType(), currentDate);
 
             BookingSeat bookingSeat = BookingSeat.builder()
                     .booking(booking)
@@ -183,6 +183,12 @@ public class BookingServiceImpl implements BookingService {
         int paymentResult = vnPayService.orderReturn(request);
         log.info("VNPay payment verification result: {} for payment ID: {}", paymentResult, paymentId);
 
+        // Nếu signature không hợp lệ, throw exception ngay
+        if (paymentResult == -1) {
+            log.error("Invalid VNPay signature for payment ID: {}", paymentId);
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> {
                     log.error("Payment not found: {}", paymentId);
@@ -204,17 +210,30 @@ public class BookingServiceImpl implements BookingService {
             }
             bookingSeatRepository.saveAll(bookingSeats);
 
+            // Generate and save QR code
+            try {
+                // Ensure bookingSeats are loaded
+                booking.setBookingSeats(bookingSeats);
+                
+                String qrCode = qrCodeService.generateQRCode(booking);
+                if (qrCode != null) {
+                    booking.setQrCode(qrCode);
+                    bookingRepository.save(booking);
+                    log.info("QR code generated and saved for booking {}", booking.getId());
+                } else {
+                    log.warn("QR code generation returned null for booking {}", booking.getId());
+                }
+            } catch (Exception e) {
+                log.error("Failed to generate QR code for booking {}", booking.getId(), e);
+            }
+
             try {
                 emailService.sendBookingConfirmationEmail(booking);
             } catch (MessagingException e) {
                 log.error("Failed to send booking confirmation email", e);
             }
-        } else if (paymentResult == 0) {
-            // Payment failed
-            payment.setStatus(PaymentStatus.FAILED);
-            booking.setStatus(BookingStatus.CANCELLED);
         } else {
-            // Invalid signature
+            // Payment failed (paymentResult == 0)
             payment.setStatus(PaymentStatus.FAILED);
             booking.setStatus(BookingStatus.CANCELLED);
         }
@@ -234,7 +253,73 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
+        // Nếu booking đã thanh toán nhưng chưa có QR code, tạo QR code
+        if (booking.getPayment() != null && 
+            booking.getPayment().getStatus() == PaymentStatus.SUCCESS &&
+            (booking.getQrCode() == null || booking.getQrCode().isEmpty())) {
+            
+            log.info("Booking {} is paid but has no QR code. Generating QR code...", booking.getId());
+            try {
+                // Ensure bookingSeats are loaded
+                List<BookingSeat> bookingSeatsList = bookingSeatRepository.findByBooking(booking);
+                booking.setBookingSeats(bookingSeatsList);
+                
+                log.info("Generating QR code for booking {} with {} seats", booking.getId(), bookingSeatsList.size());
+                String qrCode = qrCodeService.generateQRCode(booking);
+                if (qrCode != null && !qrCode.isEmpty()) {
+                    booking.setQrCode(qrCode);
+                    booking = bookingRepository.save(booking);
+                    log.info("QR code generated and saved for booking {}. QR code length: {}", booking.getId(), qrCode.length());
+                } else {
+                    log.warn("QR code generation returned null or empty for booking {}", booking.getId());
+                }
+            } catch (Exception e) {
+                log.error("Failed to generate QR code for booking {}", booking.getId(), e);
+                e.printStackTrace(); // Print full stack trace for debugging
+            }
+        } else {
+            log.debug("Booking {} - Payment status: {}, Has QR code: {}", 
+                    booking.getId(),
+                    booking.getPayment() != null ? booking.getPayment().getStatus() : "null",
+                    booking.getQrCode() != null && !booking.getQrCode().isEmpty());
+        }
+
+        // Reload booking to ensure we have the latest data including QR code
+        booking = bookingRepository.findById(booking.getId()).orElse(booking);
         return mapToBookingResponse(booking);
+    }
+
+    @Override
+    public BookingResponse getBookingByIdWithPaymentUrl(Integer bookingId, HttpServletRequest httpRequest) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        BookingResponse response = mapToBookingResponse(booking);
+        
+        // Nếu booking chưa thanh toán, tạo lại payment URL
+        if (response.getPaymentStatus() != PaymentStatus.SUCCESS && 
+            booking.getPayment() != null) {
+            
+            Payment payment = booking.getPayment();
+            String clientIp = getClientIp(httpRequest);
+            String returnUrl = payment.getReturnUrl() != null ? payment.getReturnUrl() : 
+                              httpRequest.getScheme() + "://" + httpRequest.getServerName() + 
+                              (httpRequest.getServerPort() != 80 && httpRequest.getServerPort() != 443 ? 
+                               ":" + httpRequest.getServerPort() : "") + 
+                              "/booking-return";
+            
+            String paymentUrl = vnPayService.createOrder(
+                    (int) Math.round(payment.getAmount()),
+                    String.valueOf(payment.getId()),
+                    returnUrl,
+                    clientIp
+            );
+            
+            response.setPaymentUrl(paymentUrl);
+            response.setReturnUrl(returnUrl);
+        }
+        
+        return response;
     }
 
     @Override
@@ -338,6 +423,11 @@ public class BookingServiceImpl implements BookingService {
 
     private BookingResponse mapToBookingResponse(Booking booking) {
         List<BookingSeat> bookingSeats = bookingSeatRepository.findByBooking(booking);
+        
+        // Log để debug QR code
+        log.debug("Mapping booking {} to response. Has QR code: {}", 
+                booking.getId(), 
+                booking.getQrCode() != null && !booking.getQrCode().isEmpty());
 
         return BookingResponse.builder()
                 .bookingId(booking.getId())
@@ -345,12 +435,15 @@ public class BookingServiceImpl implements BookingService {
                 .showId(booking.getShow().getId())
                 .movieTitle(booking.getShow().getMovie().getTitle())
                 .screenName(booking.getShow().getScreen().getName())
+                .showDate(booking.getShow().getShowDate())
+                .startTime(booking.getShow().getStartTime())
                 .bookingTime(booking.getBookingTime())
                 .expireTime(booking.getExpireTime())
                 .totalAmount(booking.getTotalAmount())
                 .status(booking.getStatus())
                 .paymentId(booking.getPayment() != null ? booking.getPayment().getId() : null)
                 .paymentStatus(booking.getPayment() != null ? booking.getPayment().getStatus() : null)
+                .qrCode(booking.getQrCode())
                 .seats(bookingSeats.stream()
                         .map(bs -> BookedSeatResponse.builder()
                                 .seatId(bs.getSeat().getId())
@@ -368,16 +461,38 @@ public class BookingServiceImpl implements BookingService {
         double totalAmount = 0;
 
         for (Seat seat : seats) {
-            Optional<Price> priceOpt = priceRepository.findByShowAndSeatTypeAndDateBetween(
-                    show, seat.getSeatType(), currentDate);
-
-            int seatPrice = priceOpt.map(Price::getAmount)
-                    .orElse(getDefaultPrice(seat.getSeatType()));
-
+            int seatPrice = getSeatPrice(show, seat.getSeatType(), currentDate);
             totalAmount += seatPrice;
         }
 
         return totalAmount;
+    }
+
+    /**
+     * Get seat price with fallback logic:
+     * 1. Try to get price from Price table (show-specific price)
+     * 2. If not found, try to get price from ScreenPrice (screen default price)
+     * 3. If still not found, use default hardcoded price
+     */
+    private int getSeatPrice(Show show, SeatType seatType, LocalDate date) {
+        // Try to get price from Price table (show-specific price)
+        Optional<Price> priceOpt = priceRepository.findByShowAndSeatTypeAndDateBetween(
+                show, seatType, date);
+        
+        if (priceOpt.isPresent()) {
+            return priceOpt.get().getAmount();
+        }
+        
+        // Fallback to ScreenPrice (screen default price)
+        Integer screenPrice = priceService.getAmountByScreenAndSeat(
+                show.getScreen().getId(), seatType);
+        
+        if (screenPrice != null && screenPrice > 0) {
+            return screenPrice;
+        }
+        
+        // Final fallback to default price
+        return getDefaultPrice(seatType);
     }
 
     private int getDefaultPrice(SeatType seatType) {

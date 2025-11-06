@@ -81,8 +81,11 @@ public class BookingController {
     }
 
     @GetMapping("/{bookingId}")
-    public ResponseData<BookingResponse> getBookingById(@PathVariable Integer bookingId) {
-        BookingResponse response = bookingService.getBookingById(bookingId);
+    public ResponseData<BookingResponse> getBookingById(
+            @PathVariable Integer bookingId,
+            HttpServletRequest httpRequest) {
+        // Use method that creates payment URL if needed
+        BookingResponse response = bookingService.getBookingByIdWithPaymentUrl(bookingId, httpRequest);
         return ResponseData.<BookingResponse>builder()
                 .code(200)
                 .message("Booking fetched")

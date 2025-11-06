@@ -38,4 +38,7 @@ public class Booking extends AbstractEntity<Integer> {
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     List<BookingSeat> bookingSeats;
 
+    @Lob
+    @Column(name = "qr_code", columnDefinition = "LONGTEXT")
+    String qrCode; // Base64 encoded QR code image
 }

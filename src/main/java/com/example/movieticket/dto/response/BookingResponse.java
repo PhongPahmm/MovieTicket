@@ -6,7 +6,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Getter
@@ -18,6 +20,8 @@ public class BookingResponse {
     Integer showId;
     String movieTitle;
     String screenName;
+    LocalDate showDate;
+    LocalTime startTime;
     LocalDateTime bookingTime;
     LocalDateTime expireTime;
     BookingStatus status;
@@ -26,5 +30,6 @@ public class BookingResponse {
     PaymentStatus paymentStatus;
     String paymentUrl;
     String returnUrl;
+    String qrCode; // Base64 encoded QR code image
     List<BookedSeatResponse> seats;
 }
