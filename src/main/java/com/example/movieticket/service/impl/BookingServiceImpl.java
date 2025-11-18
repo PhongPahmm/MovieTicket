@@ -13,7 +13,6 @@ import com.example.movieticket.repository.*;
 import com.example.movieticket.service.BookingService;
 import com.example.movieticket.service.EmailService;
 import com.example.movieticket.service.PriceService;
-import com.example.movieticket.service.QRCodeService;
 import com.example.movieticket.service.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +25,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.mail.MailException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -51,7 +51,7 @@ public class BookingServiceImpl implements BookingService {
     PriceService priceService;
     VNPayService vnPayService;
     EmailService emailService;
-    QRCodeService qrCodeService;
+    QRCodeServiceImpl qrCodeService;
     UserService userService;
     BookingCleanUpService bookingCleanupService;
     SimpMessagingTemplate messagingTemplate;
@@ -229,7 +229,7 @@ public class BookingServiceImpl implements BookingService {
 
             try {
                 emailService.sendBookingConfirmationEmail(booking);
-            } catch (MessagingException e) {
+            } catch (MailException | MessagingException e) {
                 log.error("Failed to send booking confirmation email", e);
             }
         } else {

@@ -66,8 +66,8 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
-        System.out.println("✅ Google Login Successful");
-        System.out.println("📧 Email from Google: " + email);
+        System.out.println("Google Login Successful");
+        System.out.println("Email from Google: " + email);
 
         var user = userRepository.findByEmail(email);
         if (user == null) {
@@ -81,8 +81,8 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
 
         String accessToken = jwtUtil.generateAccessToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
-        System.out.println("✅ Access Token generated: " + accessToken);
-        System.out.println("✅ Refresh Token generated: " + refreshToken);
+        System.out.println("Access Token generated: " + accessToken);
+        System.out.println("Refresh Token generated: " + refreshToken);
 
         // Set refresh token cookie
         ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("refreshToken", refreshToken)
@@ -109,7 +109,7 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         
         ResponseCookie cookie = cookieBuilder.build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        System.out.println("🍪 Cookie domain set to: " + cookieDomain + ", secure: " + isProduction);
+        System.out.println("Cookie domain set to: " + cookieDomain + ", secure: " + isProduction);
 
         // Redirect to frontend with token
         String redirectUrl = frontendBaseUrl+"/oauth2/success?token=" + URLEncoder.encode(accessToken, StandardCharsets.UTF_8);

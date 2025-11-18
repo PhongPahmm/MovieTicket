@@ -6,10 +6,14 @@ import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import lombok.extern.slf4j.Slf4j;
+
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
     @ExceptionHandler(value = Exception.class)
-    ResponseEntity<ResponseData<?>> handlingRuntimeException() {
+    ResponseEntity<ResponseData<?>> handlingRuntimeException(Exception ex) {
+        log.error("Unhandled exception in API layer", ex);
         ResponseData<?> responseData = new ResponseData<>();
 
         responseData.setCode(ErrorCode.UNCATEGORIZED_EXCEPTION.getErrorCode());
@@ -25,6 +29,9 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = (e.getErrorCode() != null)
                 ? e.getErrorCode()
                 : ErrorCode.UNCATEGORIZED_EXCEPTION;
+        if (log.isDebugEnabled()) {
+            log.debug("AppException thrown with code {} - {}", errorCode.getErrorCode(), errorCode.getErrorMessage(), e);
+        }
         ResponseData<?> responseData = new ResponseData<>();
         responseData.setCode(errorCode.getErrorCode());
         responseData.setMessage(errorCode.getErrorMessage());
