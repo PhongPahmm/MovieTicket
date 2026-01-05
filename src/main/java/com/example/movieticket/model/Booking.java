@@ -40,5 +40,5 @@ public class Booking extends AbstractEntity<Integer> {
 
     @Lob
     @Column(name = "qr_code", columnDefinition = "LONGTEXT")
-    String qrCode; // Base64 encoded QR code image
+    String qrCode;
 }

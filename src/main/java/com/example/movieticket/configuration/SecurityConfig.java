@@ -2,6 +2,7 @@ package com.example.movieticket.configuration;
 
 
 import com.example.movieticket.repository.InvalidatedTokenRepository;
+import com.example.movieticket.service.TokenBlackListService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -32,7 +33,7 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    private final InvalidatedTokenRepository invalidatedTokenRepository;
+    private final TokenBlackListService tokenBlackListService;
     private final CustomSuccessHandler customSuccessHandler;
     @Value("${frontend.base-url}")
     private String frontendBaseUrl;
@@ -86,7 +87,7 @@ public class SecurityConfig {
                         .loginPage(frontendBaseUrl+"/login")
                         .successHandler(customSuccessHandler)
                         .failureUrl(frontendBaseUrl+"/login?error"))
-                .addFilterBefore(new JwtAuthenticationFilter(invalidatedTokenRepository), BearerTokenAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthenticationFilter(tokenBlackListService), BearerTokenAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
                         .accessDeniedHandler(new JwtAccessDenied())

@@ -12,6 +12,7 @@ import com.example.movieticket.model.User;
 import com.example.movieticket.repository.InvalidatedTokenRepository;
 import com.example.movieticket.repository.UserRepository;
 import com.example.movieticket.service.AuthenticationService;
+import com.example.movieticket.service.TokenBlackListService;
 import com.example.movieticket.util.JwtUtil;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSVerifier;
@@ -43,7 +44,7 @@ import java.net.URISyntaxException;
 public class AuthenticationServiceImpl implements AuthenticationService {
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
-    InvalidatedTokenRepository invalidatedTokenRepository;
+    TokenBlackListService tokenBlackListService;
     JwtUtil jwtUtil;
     @NonFinal
     @Value("${jwt.secret-key}")
@@ -128,18 +129,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         var signedToken = verifyToken(request.getToken());
         String jti = signedToken.getJWTClaimsSet().getJWTID();
         Date expirationTime = signedToken.getJWTClaimsSet().getExpirationTime();
-        String username = signedToken.getJWTClaimsSet().getSubject();
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-
-        InvalidatedToken invalidatedToken = InvalidatedToken.builder()
-                .token(jti)
-                .expiryTime(expirationTime)
-                .user(user)
-                .build();
-        invalidatedTokenRepository.save(invalidatedToken);
+        tokenBlackListService.blacklistToken(jti, expirationTime);
         return LogoutResponse.builder().logout(true).build();
     }
+
     @Override
     public RefreshResponse refreshToken(HttpServletRequest request, HttpServletResponse response) throws ParseException, JOSEException {
         Cookie[] cookies = request.getCookies();
@@ -163,15 +156,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
 
-        InvalidatedToken invalidatedToken = InvalidatedToken.builder()
-                .token(jti)
-                .expiryTime(expiryTime)
-                .user(user)
-                .build();
-        invalidatedTokenRepository.save(invalidatedToken);
+
+        tokenBlackListService.blacklistToken(jti, expiryTime);
 
         String newAccessToken = jwtUtil.generateAccessToken(user);
         String newRefreshToken = jwtUtil.generateRefreshToken(user);
+
         ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("refreshToken", newRefreshToken)
                 .httpOnly(true)
                 .path("/")
@@ -207,11 +197,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         JWSVerifier verifier = new MACVerifier(SECRET_KEY.getBytes());
         SignedJWT signedJWT = SignedJWT.parse(token);
         Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+        String jti = signedJWT.getJWTClaimsSet().getJWTID();
         var verified = signedJWT.verify(verifier);
         if (!(verified && expirationTime.after(new Date()))) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
-        if (invalidatedTokenRepository.existsByToken(signedJWT.getJWTClaimsSet().getJWTID())) {
+        if (tokenBlackListService.isBlacklisted(jti)) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
         return signedJWT;

@@ -3,6 +3,7 @@ package com.example.movieticket.configuration;
 import com.example.movieticket.dto.response.ErrorResponse;
 import com.example.movieticket.exception.ErrorCode;
 import com.example.movieticket.repository.InvalidatedTokenRepository;
+import com.example.movieticket.service.TokenBlackListService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import jakarta.servlet.FilterChain;
@@ -19,7 +20,7 @@ import java.util.Date;
 
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private final InvalidatedTokenRepository tokenRepo;
+    private final TokenBlackListService tokenBlackListService;
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
@@ -35,7 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = auth.substring(7);
             String jti = SignedJWT.parse(token).getJWTClaimsSet().getJWTID();
 
-            if (jti != null && tokenRepo.findByToken(jti).isPresent()) {
+            if (jti != null && tokenBlackListService.isBlacklisted(jti)) {
                 sendError(response, request.getRequestURI());
                 return;
             }
