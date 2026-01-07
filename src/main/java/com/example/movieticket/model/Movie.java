@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -16,7 +17,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "movies")
-public class Movie extends AbstractEntity<Integer> {
+public class Movie extends AbstractEntity<Integer> implements Serializable {
     private String title;
     private String description;
     private Integer durationMinutes;
@@ -24,7 +25,7 @@ public class Movie extends AbstractEntity<Integer> {
     private String ageRating;
     private String director;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> actors;
 
     private String language;

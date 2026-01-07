@@ -5,6 +5,7 @@ import com.example.movieticket.dto.response.MovieResponse;
 import com.example.movieticket.dto.response.PageResponse;
 import com.example.movieticket.dto.response.ResponseData;
 import com.example.movieticket.service.MovieService;
+import com.example.movieticket.service.UserService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -21,6 +22,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MovieController {
     MovieService movieService;
+    private final UserService userService;
 
     @PostMapping(value = "add-movie", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseData<MovieResponse> createMovie(@ModelAttribute MovieRequest request) {
@@ -50,9 +52,10 @@ public class MovieController {
     public ResponseData<PageResponse<MovieResponse>> getAllMovies(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "8") int size) {
+        var role = userService.getCurrentUserRole();
         return ResponseData.<PageResponse<MovieResponse>>builder()
                 .code(200)
-                .data(movieService.getAllMovies(page, size))
+                .data(movieService.getAllMovies(page, size, role))
                 .message("Successfully retrieved all movies")
                 .build();
     }

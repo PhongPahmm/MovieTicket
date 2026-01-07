@@ -20,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -141,6 +143,20 @@ public class UserServiceImpl implements UserService {
             return null;
         }
     }
+    @Override
+    public UserRole getCurrentUserRole() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated()
+                || auth instanceof AnonymousAuthenticationToken) {
+            return UserRole.GUEST;
+        }
+
+        return userRepository.findByUsername(auth.getName())
+                .map(User::getRole)
+                .orElse(UserRole.GUEST);
+    }
+
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")

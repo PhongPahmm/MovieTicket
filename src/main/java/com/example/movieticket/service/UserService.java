@@ -1,5 +1,6 @@
 package com.example.movieticket.service;
 
+import com.example.movieticket.common.UserRole;
 import com.example.movieticket.dto.request.UserCreationRequest;
 import com.example.movieticket.dto.request.UserUpdateRequest;
 import com.example.movieticket.dto.response.PageResponse;
@@ -13,4 +14,5 @@ public interface UserService {
     void deleteUser(int userId);
     UserResponse changeUserStatus(int userId, boolean isActive);
     UserResponse getCurrentUser();
+    UserRole getCurrentUserRole();
 }

@@ -19,7 +19,6 @@ public class PaginationUtil {
                 .pageSize(page.getSize())
                 .totalItems(page.getTotalElements())
                 .totalPages(page.getTotalPages())
-                .isLast(page.isLast())
                 .build();
     }
 }

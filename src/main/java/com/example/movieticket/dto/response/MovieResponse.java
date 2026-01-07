@@ -1,9 +1,7 @@
 package com.example.movieticket.dto.response;
 
 import com.example.movieticket.common.MovieStatus;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,6 +10,8 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class MovieResponse {
     private int id;
     private String title;

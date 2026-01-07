@@ -21,6 +21,8 @@ import com.example.movieticket.util.PaginationUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +45,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
+    @CacheEvict(value = "allMovies", allEntries = true)
     public MovieResponse createMovie(MovieRequest request) {
         String posterUrl = "";
         if(request.getPosterUrl() != null) {
@@ -88,6 +91,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
+    @CacheEvict(value = "allMovies", allEntries = true)
     public MovieResponse updateMovie(int movieId, MovieRequest request) {
         var movie = movieRepository.findById(movieId)
                 .orElseThrow(() -> new AppException(ErrorCode.MOVIE_NOT_FOUND));
@@ -120,11 +124,14 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public PageResponse<MovieResponse> getAllMovies(int page, int size) {
+    @Cacheable(value = "allMovies", key ="'page:' + #page +'size' + #size + 'role' + #role")
+    public PageResponse<MovieResponse> getAllMovies(int page, int size, UserRole role) {
+        System.out.println("getAllMovies from database!!!!");
         refreshMovieStatuses();
         Pageable pageable = PageRequest.of(page, size);
         var user = userService.getCurrentUser();
         Page<Movie> movies;
+
         if(user != null && user.getRole().equals(UserRole.ADMIN)){
             movies = movieRepository.findAll(pageable);
         }else {
@@ -228,7 +235,7 @@ public class MovieServiceImpl implements MovieService {
                 .releaseDate(movie.getReleaseDate())
                 .ageRating(movie.getAgeRating())
                 .director(movie.getDirector())
-                .actors(movie.getActors())
+                .actors(new ArrayList<>(movie.getActors()))
                 .language(movie.getLanguage())
                 .posterUrl(movie.getPosterUrl())
                 .trailerUrl(movie.getTrailerUrl())
